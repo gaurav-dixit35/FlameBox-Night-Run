@@ -1,0 +1,8 @@
+/* flamebox-night-run/css/style.css */
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #0f0f1f;
+  font-family: 'Segoe UI', sans-serif;
+  overflow: hidden;
+}
