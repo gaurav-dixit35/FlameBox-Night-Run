@@ -9,6 +9,14 @@ canvas.height = window.innerHeight;
 
 const groundHeight = 100;
 const player = {
+  animation: {
+  powerPunchActive: false,
+  powerPunchTimer: 0
+},
+trail: [],
+trailTimer: 0,
+hasLightningTrail: false,
+
   x: 100,
   y: canvas.height - groundHeight - 50,
   width: 50,
@@ -105,15 +113,6 @@ function updateFlames() {
     if (f.x + f.width < 0) flames.splice(i, 1);
   }
 }
-// 🔓 Auto-unlock powers when enough flames collected
-for (const key in powers) {
-  const power = powers[key];
-  if (!power.unlocked && flameCounters[power.type] >= power.cost) {
-    power.unlocked = true;
-    console.log(`🔓 ${power.name} unlocked!`);
-  }
-}
-
 // 🎨 Draw Flames
 function drawFlames(ctx) {
   for (const f of flames) {
@@ -145,6 +144,11 @@ function checkFlameCollection(player) {
       f.collected = true;
       collectedTotal++;
       flameCounters[f.type]++;
+      if (f.type === "abyssal") {
+  player.hasLightningTrail = true;
+  player.trailTimer = 5000; // lasts for 5 seconds
+}
+
     }
   }
 
@@ -193,11 +197,42 @@ function checkCollision(player) {
   return false;
 }
 
+  function drawLightningTrail() {
+  for (let i = player.trail.length - 1; i >= 0; i--) {
+    const t = player.trail[i];
+    t.opacity -= 0.05;
+    if (t.opacity <= 0) {
+      player.trail.splice(i, 1);
+      continue;
+    }
+
+    ctx.save();
+    ctx.globalAlpha = t.opacity;
+    ctx.fillStyle = "#cc00ff"; // Black-violet spark
+    ctx.beginPath();
+    ctx.arc(t.x, t.y, t.size, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
 // 🧱 Ground / Player
 function drawPlayer() {
+  if (player.animation.powerPunchActive) {
+    ctx.save();
+    ctx.translate(player.x + player.width / 2, player.y + player.height / 2);
+    ctx.fillStyle = "#ffffff";
+    ctx.globalAlpha = 0.9;
+    ctx.beginPath();
+    ctx.arc(0, 0, 60 - player.animation.powerPunchTimer / 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // Draw player normally
   ctx.fillStyle = player.color;
   ctx.fillRect(player.x, player.y, player.width, player.height);
 }
+
 
 function drawGround() {
   ctx.fillStyle = "#2f2f4f";
@@ -221,9 +256,36 @@ function gameLoop(timestamp) {
 
   drawGround();
   updatePlayer();
+  drawLightningTrail();
   drawPlayer();
 
-  // Obstacles
+
+  // ⏳ Lightning trail timer
+if (player.hasLightningTrail) {
+  player.trailTimer -= 16;
+
+  // Add trail spark
+  player.trail.push({
+    x: player.x + player.width / 2,
+    y: player.y + player.height / 2,
+    opacity: 1,
+    size: Math.random() * 8 + 5
+  });
+
+  if (player.trailTimer <= 0) {
+    player.hasLightningTrail = false;
+  }
+}
+
+  if (player.animation.powerPunchActive) {
+  player.animation.powerPunchTimer -= 16;
+  if (player.animation.powerPunchTimer <= 0) {
+    player.animation.powerPunchActive = false;
+  }
+}
+
+
+  //Obstacles
   if (!obstacleTimer || timestamp - obstacleTimer > spawnInterval) {
     spawnObstacle(canvas.width, canvas.height - groundHeight);
     obstacleTimer = timestamp;
@@ -249,6 +311,16 @@ function gameLoop(timestamp) {
   updateFlames();
   drawFlames(ctx);
   flameCount += checkFlameCollection(player);
+
+  // 🔓 Auto-unlock powers when enough flames collected
+for (const key in powers) {
+  const power = powers[key];
+  if (!power.unlocked && flameCounters[power.type] >= power.cost) {
+    power.unlocked = true;
+    console.log(`🔓 ${power.name} unlocked!`);
+  }
+}
+
 
   // UI
   ctx.fillStyle = "#ffffff";
@@ -303,15 +375,19 @@ function usePower(key) {
   power.lastUsed = now;
 
   if (key === "powerPunch") {
-    // Example: destroy the nearest obstacle
-    for (let i = 0; i < obstacles.length; i++) {
-      if (obstacles[i].x > player.x) {
-        console.log("💥 Power Punch used!");
-        obstacles.splice(i, 1);
-        break;
-      }
+  // Mark animation
+  player.animation.powerPunchActive = true;
+  player.animation.powerPunchTimer = 300; // ms
+
+  for (let i = 0; i < obstacles.length; i++) {
+    if (obstacles[i].x > player.x) {
+      console.log("💥 Power Punch used!");
+      obstacles.splice(i, 1);
+      break;
     }
   }
+}
+
 
   // Add other power effects here...
 }
