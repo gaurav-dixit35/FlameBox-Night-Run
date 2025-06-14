@@ -24,6 +24,38 @@ const player = {
     powerPunchActive: false,
     powerPunchTimer: 0
   },
+    fiveJump: {
+    name: "5x Jump",
+    cost: 100,
+    type: "dark",
+    cooldown: 30000,
+    lastUsed: 0,
+    unlocked: false
+  },
+  jumpBack: {
+    name: "Jump Back",
+    cost: 150,
+    type: "dark",
+    cooldown: 20000,
+    lastUsed: 0,
+    unlocked: false
+  },
+  gravityShift: {
+    name: "Gravity Shift",
+    cost: 50,
+    type: "violet",
+    cooldown: 45000,
+    lastUsed: 0,
+    unlocked: false
+  },
+  flashRunner: {
+    name: "Flash Runner",
+    cost: 100,
+    ype: "violet",
+    cooldown: 90000,
+    lastUsed: 0,
+    unlocked: false
+  },
   trail: [],
   trailTimer: 0,
   hasLightningTrail: false,
@@ -64,6 +96,9 @@ let flameSpawnTimer = 0;
 const flameInterval = 2000;
 let flameCounters = { dark: 0, violet: 0, abyssal: 0 };
 let flameCount = 0;
+let flameMultiplier = 1;
+let flameStreak = 0;
+const maxMultiplier = 5;
 const obstacles = [];
 const flames = [];
 
@@ -117,24 +152,43 @@ function drawFlames() {
 }
 
 function checkFlameCollection(player) {
-  let collected = 0;
+  let collectedThisFrame = 0;
   for (const f of flames) {
     if (f.collected) continue;
-    if (player.x < f.x + f.width &&
-        player.x + player.width > f.x &&
-        player.y < f.y + f.height &&
-        player.y + player.height > f.y) {
+
+    const isTouching =
+      player.x < f.x + f.width &&
+      player.x + player.width > f.x &&
+      player.y < f.y + f.height &&
+      player.y + player.height > f.y;
+
+    if (isTouching) {
       f.collected = true;
-      collected++;
-      flameCounters[f.type]++;
+      collectedThisFrame++;
+      flameCounters[f.type] += flameMultiplier;
       if (f.type === "abyssal") {
         player.hasLightningTrail = true;
         player.trailTimer = 5000;
       }
     }
   }
-  return collected;
+
+  if (collectedThisFrame > 0) {
+    flameStreak += collectedThisFrame;
+    if (flameStreak >= 3 && flameMultiplier < maxMultiplier) {
+      flameMultiplier++;
+      flameStreak = 0;
+      console.log(`🔥 Multiplier increased to x${flameMultiplier}`);
+    }
+  } else {
+    // If no flame collected this frame, reset streak
+    flameStreak = 0;
+    flameMultiplier = 1;
+  }
+
+  return collectedThisFrame;
 }
+
 
 function drawLightningTrail() {
   for (let i = player.trail.length - 1; i >= 0; i--) {
@@ -262,6 +316,8 @@ function gameLoop(timestamp) {
   ctx.fillText(`🔥 Dark: ${flameCounters.dark}`, 30, 40);
   ctx.fillText(`💜 Violet: ${flameCounters.violet}`, 30, 60);
   ctx.fillText(`🟣 Abyssal: ${flameCounters.abyssal}`, 30, 80);
+  ctx.fillText(`🔥 Multiplier: x${flameMultiplier}`, 30, 100);
+
 
   if (player.activePower) {
     player.powerTimer -= 16;
