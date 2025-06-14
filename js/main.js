@@ -467,6 +467,11 @@ window.addEventListener("keydown", function (e) {
   if (e.code === "KeyP") usePower("powerPunch");
   if (e.code === "KeyB") usePower("shieldBarrier");
   if (e.code === "KeyT") usePower("tornado");
+  if (e.code === "KeyJ") usePower("fiveJump");
+  if (e.code === "KeyR") usePower("jumpBack");
+  if (e.code === "KeyG") usePower("gravityShift");
+  if (e.code === "KeyF") usePower("flashRunner");
+
 });
 
 restartBtn.addEventListener("click", resetGame);
