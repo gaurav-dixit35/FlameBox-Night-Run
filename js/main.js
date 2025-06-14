@@ -1,3 +1,10 @@
+import {
+  spawnObstacle,
+  updateObstacles,
+  drawObstacles,
+  checkCollision,
+  obstacles
+} from './js/obstacles.js';
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 const restartBtn = document.getElementById("restartBtn");
@@ -26,7 +33,7 @@ const player = {
   },
     fiveJump: {
     name: "5x Jump",
-    cost: 100,
+    cost: 8,
     type: "dark",
     cooldown: 30000,
     lastUsed: 0,
@@ -34,7 +41,7 @@ const player = {
   },
   jumpBack: {
     name: "Jump Back",
-    cost: 150,
+    cost: 9,
     type: "dark",
     cooldown: 20000,
     lastUsed: 0,
@@ -42,7 +49,7 @@ const player = {
   },
   gravityShift: {
     name: "Gravity Shift",
-    cost: 50,
+    cost: 2,
     type: "violet",
     cooldown: 45000,
     lastUsed: 0,
@@ -50,7 +57,7 @@ const player = {
   },
   flashRunner: {
     name: "Flash Runner",
-    cost: 100,
+    cost: 4,
     ype: "violet",
     cooldown: 90000,
     lastUsed: 0,
@@ -82,7 +89,7 @@ const powers = {
   },
   tornado: {
     name: "Tornado",
-    cost: 1,
+    cost: 15,
     type: "violet",
     cooldown: 60000,
     lastUsed: 0,
@@ -324,6 +331,9 @@ function gameLoop(timestamp) {
     if (player.powerTimer <= 0) {
       player.activePower = null;
       activeTornado = null;
+        player.gravity = 0.8;
+      player.speedBoost = false;
+      player.jumpCount = 1;
     }
   }
 
@@ -371,6 +381,26 @@ function usePower(key) {
       opacity: 1
     };
   }
+  else if (key === "fiveJump") {
+  player.jumpCount = 5;
+  player.powerTimer = 7000;
+  console.log("🆙 5x Jump enabled!");
+  }
+  else if (key === "jumpBack") {
+    player.x -= 100;
+    console.log("↩️ Jumped back!");
+  }
+  else if (key === "gravityShift") {
+    player.gravity = 0.2;
+    player.powerTimer = 4000;
+    console.log("🌌 Gravity Shift active");
+  }
+  else if (key === "flashRunner") {
+    player.speedBoost = true;
+    player.powerTimer = 8000;
+    console.log("⚡ Flash Runner active!");
+  }
+
 }
 
 function spawnObstacle(canvasWidth, groundY) {
@@ -437,6 +467,10 @@ function updatePlayer() {
     player.y = canvas.height - groundHeight - player.height;
     player.dy = 0;
     player.isJumping = false;
+    player.dy += player.gravity;
+    player.y += player.dy;
+    if (player.speedBoost) player.x += 4;
+
   }
 }
 
@@ -460,10 +494,15 @@ function resetGame() {
 }
 
 window.addEventListener("keydown", function (e) {
-  if (e.code === "Space" && !player.isJumping) {
+  if (e.code === "Space") {
+  if (!player.jumpCount) player.jumpCount = 1;
+  if (player.jumpCount > 0) {
     player.dy = player.jumpPower;
     player.isJumping = true;
+    player.jumpCount--;
   }
+}
+
   if (e.code === "KeyP") usePower("powerPunch");
   if (e.code === "KeyB") usePower("shieldBarrier");
   if (e.code === "KeyT") usePower("tornado");
@@ -476,30 +515,3 @@ window.addEventListener("keydown", function (e) {
 
 restartBtn.addEventListener("click", resetGame);
 requestAnimationFrame(gameLoop);
-
-
-/* main.js
-import PreloadScene from "./scenes/PreloadScene.js";
-import LoginScene from "./scenes/LoginScene.js";
-
-const db = firebase.firestore();
-const config = {
-  type: Phaser.AUTO,
-  width: 960,
-  height: 540,
-  backgroundColor: "#0d0d1a",
-  parent: "game-container",
-  physics: {
-    default: "arcade",
-    arcade: {
-      gravity: { y: 1000 },
-      debug: false
-    }
-  },
-  dom: {
-    createContainer: true
-  },
-  scene: [PreloadScene, LoginScene]
-};
-
-new Phaser.Game(config); */
