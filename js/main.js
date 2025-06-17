@@ -1,10 +1,12 @@
+// js/main.js
 import {
   spawnObstacle,
   updateObstacles,
   drawObstacles,
   checkCollision,
   obstacles
-} from './js/obstacles.js';
+} from './obstacles.js';
+
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 const restartBtn = document.getElementById("restartBtn");
@@ -27,42 +29,7 @@ const player = {
   gravity: 0.8,
   jumpPower: -15,
   isJumping: false,
-  animation: {
-    powerPunchActive: false,
-    powerPunchTimer: 0
-  },
-    fiveJump: {
-    name: "5x Jump",
-    cost: 8,
-    type: "dark",
-    cooldown: 30000,
-    lastUsed: 0,
-    unlocked: false
-  },
-  jumpBack: {
-    name: "Jump Back",
-    cost: 9,
-    type: "dark",
-    cooldown: 20000,
-    lastUsed: 0,
-    unlocked: false
-  },
-  gravityShift: {
-    name: "Gravity Shift",
-    cost: 2,
-    type: "violet",
-    cooldown: 45000,
-    lastUsed: 0,
-    unlocked: false
-  },
-  flashRunner: {
-    name: "Flash Runner",
-    cost: 4,
-    ype: "violet",
-    cooldown: 90000,
-    lastUsed: 0,
-    unlocked: false
-  },
+  animation: { powerPunchActive: false, powerPunchTimer: 0 },
   trail: [],
   trailTimer: 0,
   hasLightningTrail: false,
@@ -71,77 +38,35 @@ const player = {
 };
 
 const powers = {
-  powerPunch: {
-    name: "Power Punch",
-    cost: 10,
-    type: "dark",
-    cooldown: 15000,
-    lastUsed: 0,
-    unlocked: false
-  },
-  shieldBarrier: {
-    name: "Shield Barrier",
-    cost: 15,
-    type: "dark",
-    cooldown: 20000,
-    lastUsed: 0,
-    unlocked: false
-  },
-  tornado: {
-    name: "Tornado",
-    cost: 15,
-    type: "violet",
-    cooldown: 60000,
-    lastUsed: 0,
-    unlocked: false
-  }
+  powerPunch: { name: "Power Punch", cost: 10, type: "dark", cooldown: 15000, lastUsed: 0, unlocked: false },
+  shieldBarrier: { name: "Shield Barrier", cost: 15, type: "dark", cooldown: 20000, lastUsed: 0, unlocked: false },
+  tornado: { name: "Tornado", cost: 15, type: "violet", cooldown: 60000, lastUsed: 0, unlocked: false },
+  fiveJump: { name: "5x Jump", cost: 20, type: "dark", cooldown: 30000, lastUsed: 0, unlocked: false },
+  jumpBack: { name: "Jump Back", cost: 9, type: "dark", cooldown: 20000, lastUsed: 0, unlocked: false },
+  gravityShift: { name: "Gravity Shift", cost: 2, type: "violet", cooldown: 45000, lastUsed: 0, unlocked: false },
+  flashRunner: { name: "Flash Runner", cost: 4, type: "violet", cooldown: 90000, lastUsed: 0, unlocked: false }
 };
 
-let obstacleTimer = 0;
-const spawnInterval = 1500;
-let flameSpawnTimer = 0;
-const flameInterval = 2000;
 let flameCounters = { dark: 0, violet: 0, abyssal: 0 };
-let flameCount = 0;
 let flameMultiplier = 1;
 let flameStreak = 0;
 const maxMultiplier = 5;
-const obstacles = [];
 const flames = [];
 
 function spawnFlame(canvasWidth, groundY) {
   const rand = Math.random();
-  let type = "dark";
-  let color = "#8000ff";
-  if (rand < 0.01) {
-    type = "abyssal";
-    color = "#cc00ff";
-  } else if (rand < 0.15) {
-    type = "violet";
-    color = "#9933ff";
-  }
-  flames.push({
-    x: canvasWidth + Math.random() * 100,
-    y: groundY - 60,
-    width: 20,
-    height: 30,
-    speed: 6,
-    color,
-    type,
-    collected: false,
-    scale: 1
-  });
+  let type = "dark", color = "#8000ff";
+  if (rand < 0.01) [type, color] = ["abyssal", "#cc00ff"];
+  else if (rand < 0.15) [type, color] = ["violet", "#9933ff"];
+  flames.push({ x: canvasWidth + Math.random() * 100, y: groundY - 60, width: 20, height: 30, speed: 6, color, type, collected: false, scale: 1 });
 }
 
 function updateFlames() {
   for (let i = flames.length - 1; i >= 0; i--) {
     const f = flames[i];
     f.x -= f.speed;
-    if (f.collected) {
-      f.scale -= 0.1;
-      if (f.scale <= 0) flames.splice(i, 1);
-    }
-    if (f.x + f.width < 0) flames.splice(i, 1);
+    if (f.collected) { f.scale -= 0.1; if (f.scale <= 0) flames.splice(i, 1); }
+    else if (f.x + f.width < 0) flames.splice(i, 1);
   }
 }
 
@@ -159,19 +84,13 @@ function drawFlames() {
 }
 
 function checkFlameCollection(player) {
-  let collectedThisFrame = 0;
+  let collected = 0;
   for (const f of flames) {
     if (f.collected) continue;
-
-    const isTouching =
-      player.x < f.x + f.width &&
-      player.x + player.width > f.x &&
-      player.y < f.y + f.height &&
-      player.y + player.height > f.y;
-
-    if (isTouching) {
+    const hit = player.x < f.x + f.width && player.x + player.width > f.x && player.y < f.y + f.height && player.y + player.height > f.y;
+    if (hit) {
       f.collected = true;
-      collectedThisFrame++;
+      collected++;
       flameCounters[f.type] += flameMultiplier;
       if (f.type === "abyssal") {
         player.hasLightningTrail = true;
@@ -179,23 +98,79 @@ function checkFlameCollection(player) {
       }
     }
   }
-
-  if (collectedThisFrame > 0) {
-    flameStreak += collectedThisFrame;
+  if (collected > 0) {
+    flameStreak += collected;
     if (flameStreak >= 3 && flameMultiplier < maxMultiplier) {
       flameMultiplier++;
       flameStreak = 0;
-      console.log(`🔥 Multiplier increased to x${flameMultiplier}`);
     }
   } else {
-    // If no flame collected this frame, reset streak
     flameStreak = 0;
     flameMultiplier = 1;
   }
-
-  return collectedThisFrame;
 }
 
+function usePower(key) {
+  const power = powers[key];
+  if (!power || !power.unlocked || flameCounters[power.type] < power.cost) return;
+  const now = performance.now();
+  if (now - power.lastUsed < power.cooldown) return;
+  flameCounters[power.type] -= power.cost;
+  power.lastUsed = now;
+  player.activePower = key;
+
+  if (key === "powerPunch") {
+    player.animation.powerPunchActive = true;
+    player.animation.powerPunchTimer = 300;
+    for (let i = 0; i < obstacles.length; i++) {
+      if (obstacles[i].x > player.x) {
+        obstacles.splice(i, 1);
+        break;
+      }
+    }
+  } else if (key === "shieldBarrier") player.powerTimer = 3000;
+  else if (key === "tornado") {
+    player.powerTimer = 4000;
+    shakeTime = 4000;
+    shakeIntensity = 5;
+    activeTornado = {
+      x: player.x + player.width + 20,
+      y: player.y + player.height / 2,
+      radius: 0,
+      maxRadius: 60,
+      opacity: 1
+    };
+  } else if (key === "fiveJump") { player.jumpCount = 5; player.powerTimer = 7000; }
+  else if (key === "jumpBack") { player.x -= 100; }
+  else if (key === "gravityShift") { player.gravity = 0.2; player.powerTimer = 4000; }
+  else if (key === "flashRunner") { player.speedBoost = true; player.powerTimer = 8000; }
+}
+
+function drawPlayer() {
+  if (player.animation.powerPunchActive) {
+    ctx.save();
+    ctx.translate(player.x + player.width / 2, player.y + player.height / 2);
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.arc(0, 0, 60 - player.animation.powerPunchTimer / 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+  ctx.fillStyle = player.color;
+  ctx.fillRect(player.x, player.y, player.width, player.height);
+}
+
+function updatePlayer() {
+  player.dy += player.gravity;
+  player.y += player.dy;
+  if (player.y + player.height > canvas.height - groundHeight) {
+    player.y = canvas.height - groundHeight - player.height;
+    player.dy = 0;
+    player.isJumping = false;
+    if (player.speedBoost) player.x += 4;
+  }
+}
 
 function drawLightningTrail() {
   for (let i = player.trail.length - 1; i >= 0; i--) {
@@ -211,6 +186,18 @@ function drawLightningTrail() {
     ctx.beginPath();
     ctx.arc(t.x, t.y, t.size, 0, Math.PI * 2);
     ctx.fill();
+    ctx.restore();
+  }
+}
+
+function drawPowerFX() {
+  if (player.activePower === "shieldBarrier") {
+    ctx.save();
+    ctx.strokeStyle = "rgba(0, 255, 255, 0.6)";
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.arc(player.x + player.width / 2, player.y + player.height / 2, 40 + Math.sin(Date.now() / 100) * 5, 0, Math.PI * 2);
+    ctx.stroke();
     ctx.restore();
   }
 }
@@ -231,19 +218,27 @@ function drawTornadoFX() {
   ctx.restore();
 }
 
-function drawPowerFX() {
-  if (player.activePower === "shieldBarrier") {
-    ctx.save();
-    ctx.strokeStyle = "rgba(0, 255, 255, 0.6)";
-    ctx.lineWidth = 5;
-    ctx.beginPath();
-    ctx.arc(player.x + player.width / 2, player.y + player.height / 2, 40 + Math.sin(Date.now() / 100) * 5, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.restore();
-  }
+function drawGround() {
+  ctx.fillStyle = "#2f2f4f";
+  ctx.fillRect(0, canvas.height - groundHeight, canvas.width, groundHeight);
 }
 
-function gameLoop(timestamp) {
+function resetGame() {
+  Object.assign(flameCounters, { dark: 0, violet: 0, abyssal: 0 });
+  Object.assign(player, {
+    x: 100, y: canvas.height - groundHeight - player.height,
+    dy: 0, isJumping: false, trail: [], hasLightningTrail: false,
+    activePower: null
+  });
+  flames.length = 0;
+  obstacles.length = 0;
+  shakeTime = 0;
+  activeTornado = null;
+  restartBtn.style.display = "none";
+  requestAnimationFrame(gameLoop);
+}
+
+function gameLoop() {
   let offsetX = 0, offsetY = 0;
   if (shakeTime > 0) {
     shakeTime -= 16;
@@ -256,41 +251,34 @@ function gameLoop(timestamp) {
   ctx.clearRect(-offsetX, -offsetY, canvas.width, canvas.height);
   drawGround();
   updatePlayer();
+
   if (player.hasLightningTrail) {
     player.trailTimer -= 16;
-    player.trail.push({
-      x: player.x + player.width / 2,
-      y: player.y + player.height / 2,
-      opacity: 1,
-      size: Math.random() * 8 + 5
-    });
+    player.trail.push({ x: player.x + player.width / 2, y: player.y + player.height / 2, opacity: 1, size: Math.random() * 8 + 5 });
     if (player.trailTimer <= 0) player.hasLightningTrail = false;
   }
 
-  if (activeTornado) {
-    if (activeTornado.radius < activeTornado.maxRadius) activeTornado.radius += 2;
-    for (const flame of flames) {
-      const dx = activeTornado.x - flame.x;
-      const dy = activeTornado.y - flame.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < activeTornado.radius) {
-        flame.x += dx * 0.1;
-        flame.y += dy * 0.1;
-      }
-    }
+  if (!window.flameSpawnTimer || performance.now() - window.flameSpawnTimer > 2000) {
+    spawnFlame(canvas.width, canvas.height - groundHeight);
+    window.flameSpawnTimer = performance.now();
   }
+
+  updateFlames();
+  drawFlames();
+  checkFlameCollection(player);
+
+  if (!window.obstacleTimer || performance.now() - window.obstacleTimer > 1500) {
+    spawnObstacle(canvas.width, canvas.height - groundHeight);
+    window.obstacleTimer = performance.now();
+  }
+
+  updateObstacles(player);
+  drawObstacles(ctx);
 
   drawLightningTrail();
   drawPowerFX();
   drawPlayer();
   drawTornadoFX();
-
-  if (!obstacleTimer || timestamp - obstacleTimer > spawnInterval) {
-    spawnObstacle(canvas.width, canvas.height - groundHeight);
-    obstacleTimer = timestamp;
-  }
-  updateObstacles();
-  drawObstacles();
 
   if (checkCollision(player) && player.activePower !== "shieldBarrier") {
     ctx.fillStyle = "#ff0000";
@@ -301,20 +289,11 @@ function gameLoop(timestamp) {
     return;
   }
 
-  if (!flameSpawnTimer || timestamp - flameSpawnTimer > flameInterval) {
-    spawnFlame(canvas.width, canvas.height - groundHeight);
-    flameSpawnTimer = timestamp;
-  }
-
-  updateFlames();
-  drawFlames();
-  flameCount += checkFlameCollection(player);
-
   for (const key in powers) {
-    const power = powers[key];
-    if (!power.unlocked && flameCounters[power.type] >= power.cost) {
-      power.unlocked = true;
-      console.log(`🔓 ${power.name} unlocked!`);
+    const p = powers[key];
+    if (!p.unlocked && flameCounters[p.type] >= p.cost) {
+      p.unlocked = true;
+      console.log(`🔓 ${p.name} unlocked`);
     }
   }
 
@@ -325,13 +304,24 @@ function gameLoop(timestamp) {
   ctx.fillText(`🟣 Abyssal: ${flameCounters.abyssal}`, 30, 80);
   ctx.fillText(`🔥 Multiplier: x${flameMultiplier}`, 30, 100);
 
+let hudY = 130;
+for (const key in powers) {
+  const power = powers[key];
+  const isReady = performance.now() - power.lastUsed >= power.cooldown;
+  const isUnlocked = power.unlocked;
+  const status = !isUnlocked ? "🔒 LOCKED" : isReady ? "✅ READY" : "⏳ COOLING";
+
+  ctx.fillStyle = isUnlocked ? (isReady ? "#00ff00" : "#ffaa00") : "#999999";
+  ctx.fillText(`${power.name.padEnd(14)}: ${status}`, 30, hudY);
+  hudY += 20;
+}
 
   if (player.activePower) {
     player.powerTimer -= 16;
     if (player.powerTimer <= 0) {
       player.activePower = null;
       activeTornado = null;
-        player.gravity = 0.8;
+      player.gravity = 0.8;
       player.speedBoost = false;
       player.jumpCount = 1;
     }
@@ -341,176 +331,25 @@ function gameLoop(timestamp) {
   requestAnimationFrame(gameLoop);
 }
 
-function usePower(key) {
-  const power = powers[key];
-  if (!power || !power.unlocked || flameCounters[power.type] < power.cost) {
-    console.log(`❌ Not enough flames or power locked`);
-    return;
-  }
-
-  const now = performance.now();
-  if (now - power.lastUsed < power.cooldown) {
-    console.log(`${power.name} on cooldown`);
-    return;
-  }
-
-  flameCounters[power.type] -= power.cost;
-  power.lastUsed = now;
-  player.activePower = key;
-
-  if (key === "powerPunch") {
-    player.animation.powerPunchActive = true;
-    player.animation.powerPunchTimer = 300;
-    for (let i = 0; i < obstacles.length; i++) {
-      if (obstacles[i].x > player.x) {
-        obstacles.splice(i, 1);
-        break;
-      }
-    }
-  } else if (key === "shieldBarrier") {
-    player.powerTimer = 3000;
-  } else if (key === "tornado") {
-    player.powerTimer = 4000;
-    shakeTime = 4000;
-    shakeIntensity = 5;
-    activeTornado = {
-      x: player.x + player.width + 20,
-      y: player.y + player.height / 2,
-      radius: 0,
-      maxRadius: 60,
-      opacity: 1
-    };
-  }
-  else if (key === "fiveJump") {
-  player.jumpCount = 5;
-  player.powerTimer = 7000;
-  console.log("🆙 5x Jump enabled!");
-  }
-  else if (key === "jumpBack") {
-    player.x -= 100;
-    console.log("↩️ Jumped back!");
-  }
-  else if (key === "gravityShift") {
-    player.gravity = 0.2;
-    player.powerTimer = 4000;
-    console.log("🌌 Gravity Shift active");
-  }
-  else if (key === "flashRunner") {
-    player.speedBoost = true;
-    player.powerTimer = 8000;
-    console.log("⚡ Flash Runner active!");
-  }
-
-}
-
-function spawnObstacle(canvasWidth, groundY) {
-  obstacles.push({
-    x: canvasWidth + Math.random() * 100,
-    y: groundY - 50,
-    width: 40,
-    height: 50,
-    speed: 6,
-    color: "#ff3333"
-  });
-}
-
-function updateObstacles() {
-  for (let i = obstacles.length - 1; i >= 0; i--) {
-    obstacles[i].x -= obstacles[i].speed;
-    if (obstacles[i].x + obstacles[i].width < 0) obstacles.splice(i, 1);
-  }
-}
-
-function drawObstacles() {
-  for (const obs of obstacles) {
-    ctx.fillStyle = obs.color;
-    ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
-  }
-}
-
-function checkCollision(player) {
-  for (const obs of obstacles) {
-    if (player.x < obs.x + obs.width &&
-        player.x + player.width > obs.x &&
-        player.y < obs.y + obs.height &&
-        player.y + player.height > obs.y) {
-      return true;
-    }
-  }
-  return false;
-}
-
-function drawGround() {
-  ctx.fillStyle = "#2f2f4f";
-  ctx.fillRect(0, canvas.height - groundHeight, canvas.width, groundHeight);
-}
-
-function drawPlayer() {
-  if (player.animation.powerPunchActive) {
-    ctx.save();
-    ctx.translate(player.x + player.width / 2, player.y + player.height / 2);
-    ctx.fillStyle = "#ffffff";
-    ctx.globalAlpha = 0.9;
-    ctx.beginPath();
-    ctx.arc(0, 0, 60 - player.animation.powerPunchTimer / 5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-  }
-  ctx.fillStyle = player.color;
-  ctx.fillRect(player.x, player.y, player.width, player.height);
-}
-
-function updatePlayer() {
-  player.dy += player.gravity;
-  player.y += player.dy;
-  if (player.y + player.height > canvas.height - groundHeight) {
-    player.y = canvas.height - groundHeight - player.height;
-    player.dy = 0;
-    player.isJumping = false;
-    player.dy += player.gravity;
-    player.y += player.dy;
-    if (player.speedBoost) player.x += 4;
-
-  }
-}
-
-function resetGame() {
-  flameCount = 0;
-  flameCounters = { dark: 0, violet: 0, abyssal: 0 };
-  player.x = 100;
-  player.y = canvas.height - groundHeight - player.height;
-  player.dy = 0;
-  player.isJumping = false;
-  player.trail = [];
-  player.hasLightningTrail = false;
-  player.activePower = null;
-  obstacles.length = 0;
-  flames.length = 0;
-  obstacleTimer = 0;
-  flameSpawnTimer = 0;
-  shakeTime = 0;
-  restartBtn.style.display = "none";
-  requestAnimationFrame(gameLoop);
-}
-
-window.addEventListener("keydown", function (e) {
+window.addEventListener("keydown", e => {
   if (e.code === "Space") {
-  if (!player.jumpCount) player.jumpCount = 1;
-  if (player.jumpCount > 0) {
-    player.dy = player.jumpPower;
-    player.isJumping = true;
-    player.jumpCount--;
+    if (!player.jumpCount) player.jumpCount = 1;
+    if (player.jumpCount > 0) {
+      player.dy = player.jumpPower;
+      player.isJumping = true;
+      player.jumpCount--;
+    }
   }
-}
-
-  if (e.code === "KeyP") usePower("powerPunch");
-  if (e.code === "KeyB") usePower("shieldBarrier");
-  if (e.code === "KeyT") usePower("tornado");
-  if (e.code === "KeyJ") usePower("fiveJump");
-  if (e.code === "KeyR") usePower("jumpBack");
-  if (e.code === "KeyG") usePower("gravityShift");
-  if (e.code === "KeyF") usePower("flashRunner");
-
+  const keyBindings = {
+    KeyP: "powerPunch",
+    KeyB: "shieldBarrier",
+    KeyT: "tornado",
+    KeyJ: "fiveJump",
+    KeyR: "jumpBack",
+    KeyG: "gravityShift",
+    KeyF: "flashRunner"
+  };
+  if (keyBindings[e.code]) usePower(keyBindings[e.code]);
 });
 
 restartBtn.addEventListener("click", resetGame);
