@@ -1,2 +1,2 @@
-**In Progress** Its not complete game i will build it daily once it's completed then , i will upload proper Readme file.... 
-Continue
+new updated are exciting yaa?
+be connected for more new updates.. 
