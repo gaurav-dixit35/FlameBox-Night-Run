@@ -1,4 +1,3 @@
-// js/main.js
 import {
   spawnObstacle,
   updateObstacles,
@@ -19,6 +18,64 @@ let activeTornado = null;
 let shakeTime = 0;
 let shakeIntensity = 0;
 
+// 🧠 Boss variables
+let bossSpawnTimer = 0;
+let bossInterval = 1 * 60 * 1000; // 5 minutes
+let bossPhase = 1;
+let bossActive = false;
+let boss = null;
+let bossHint = "";
+let bossSolutionKey = "powerPunch";
+let hintVisible = false;
+let hintStartTime = 0;
+let hintDisplayTimer = 5000; // How long the hint stays visible
+
+const bossWeaknessOptions = ["powerPunch", "tornado", "shieldBarrier"];
+
+function spawnBoss() {
+  bossSolutionKey = bossWeaknessOptions[Math.floor(Math.random() * bossWeaknessOptions.length)];
+  boss = {
+    x: canvas.width + 200,
+    y: canvas.height - groundHeight - (100 + bossPhase * 10),
+    width: 100 + bossPhase * 10,
+    height: 100 + bossPhase * 10,
+    color: "#5500ff",
+    speed: 2 + bossPhase * 0.5,
+    weakness: bossSolutionKey,
+    health: 3 + bossPhase * 2,
+    active: true
+  };
+  bossActive = true;
+  bossPhase++;
+}
+
+function drawBoss() {
+  if (!boss) return;
+  ctx.fillStyle = boss.color;
+  ctx.fillRect(boss.x, boss.y, boss.width, boss.height);
+  ctx.strokeStyle = "#ff00ff";
+  ctx.lineWidth = 3;
+  ctx.strokeRect(boss.x - 2, boss.y - 2, boss.width + 4, boss.height + 4);
+}
+
+function showPowerHint() {
+  hintVisible = true;
+  hintStartTime = performance.now();
+}
+
+function drawPowerHint() {
+  if (!hintVisible) return;
+  const elapsed = performance.now() - hintStartTime;
+  if (elapsed > hintDisplayTimer) {
+    hintVisible = false;
+    return;
+  }
+  ctx.fillStyle = "#ffaa00";
+  ctx.font = "28px bold sans-serif";
+  ctx.fillText(`⚠️ Use ${powers[bossSolutionKey].name} to defeat the BOSS!`, canvas.width / 2 - 200, 100);
+}
+
+// 🧍‍♂️ Player setup
 const player = {
   x: 100,
   y: canvas.height - groundHeight - 50,
@@ -37,14 +94,15 @@ const player = {
   powerTimer: 0
 };
 
+// 🔥 Powers
 const powers = {
-  powerPunch: { name: "Power Punch", cost: 10, type: "dark", cooldown: 15000, lastUsed: 0, unlocked: false },
-  shieldBarrier: { name: "Shield Barrier", cost: 15, type: "dark", cooldown: 20000, lastUsed: 0, unlocked: false },
-  tornado: { name: "Tornado", cost: 15, type: "violet", cooldown: 60000, lastUsed: 0, unlocked: false },
-  fiveJump: { name: "5x Jump", cost: 20, type: "dark", cooldown: 30000, lastUsed: 0, unlocked: false },
-  jumpBack: { name: "Jump Back", cost: 9, type: "dark", cooldown: 20000, lastUsed: 0, unlocked: false },
-  gravityShift: { name: "Gravity Shift", cost: 2, type: "violet", cooldown: 45000, lastUsed: 0, unlocked: false },
-  flashRunner: { name: "Flash Runner", cost: 4, type: "violet", cooldown: 90000, lastUsed: 0, unlocked: false }
+  powerPunch: { name: "P(Power Punch)", cost: 10, type: "dark", cooldown: 15000, lastUsed: 0, unlocked: false },
+  shieldBarrier: { name: "B(Shield Barrier)", cost: 15, type: "dark", cooldown: 20000, lastUsed: 0, unlocked: false },
+  tornado: { name: "T(Tornado)", cost: 15, type: "violet", cooldown: 60000, lastUsed: 0, unlocked: false },
+  fiveJump: { name: "J(5x Jump)", cost: 20, type: "dark", cooldown: 30000, lastUsed: 0, unlocked: false },
+  jumpBack: { name: "R(Jump Back)", cost: 9, type: "dark", cooldown: 20000, lastUsed: 0, unlocked: false },
+  gravityShift: { name: "G(Gravity Shift)", cost: 2, type: "violet", cooldown: 45000, lastUsed: 0, unlocked: false },
+  flashRunner: { name: "H(Flash Runner)", cost: 4, type: "violet", cooldown: 90000, lastUsed: 0, unlocked: false }
 };
 
 let flameCounters = { dark: 0, violet: 0, abyssal: 0 };
@@ -146,32 +204,6 @@ function usePower(key) {
   else if (key === "flashRunner") { player.speedBoost = true; player.powerTimer = 8000; }
 }
 
-function drawPlayer() {
-  if (player.animation.powerPunchActive) {
-    ctx.save();
-    ctx.translate(player.x + player.width / 2, player.y + player.height / 2);
-    ctx.globalAlpha = 0.9;
-    ctx.fillStyle = "#ffffff";
-    ctx.beginPath();
-    ctx.arc(0, 0, 60 - player.animation.powerPunchTimer / 5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-  }
-  ctx.fillStyle = player.color;
-  ctx.fillRect(player.x, player.y, player.width, player.height);
-}
-
-function updatePlayer() {
-  player.dy += player.gravity;
-  player.y += player.dy;
-  if (player.y + player.height > canvas.height - groundHeight) {
-    player.y = canvas.height - groundHeight - player.height;
-    player.dy = 0;
-    player.isJumping = false;
-    if (player.speedBoost) player.x += 4;
-  }
-}
-
 function drawLightningTrail() {
   for (let i = player.trail.length - 1; i >= 0; i--) {
     const t = player.trail[i];
@@ -201,9 +233,9 @@ function drawPowerFX() {
     ctx.restore();
   }
 }
-
 function drawTornadoFX() {
   if (!activeTornado) return;
+
   ctx.save();
   ctx.translate(activeTornado.x, activeTornado.y);
   ctx.globalAlpha = activeTornado.opacity;
@@ -216,6 +248,32 @@ function drawTornadoFX() {
     ctx.stroke();
   }
   ctx.restore();
+}
+
+function drawPlayer() {
+  if (player.animation.powerPunchActive) {
+    ctx.save();
+    ctx.translate(player.x + player.width / 2, player.y + player.height / 2);
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.arc(0, 0, 60 - player.animation.powerPunchTimer / 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+  ctx.fillStyle = player.color;
+  ctx.fillRect(player.x, player.y, player.width, player.height);
+}
+
+function updatePlayer() {
+  player.dy += player.gravity;
+  player.y += player.dy;
+  if (player.y + player.height > canvas.height - groundHeight) {
+    player.y = canvas.height - groundHeight - player.height;
+    player.dy = 0;
+    player.isJumping = false;
+    if (player.speedBoost) player.x += 4;
+  }
 }
 
 function drawGround() {
@@ -232,13 +290,17 @@ function resetGame() {
   });
   flames.length = 0;
   obstacles.length = 0;
+  boss = null;
+  bossActive = false;
+  bossPhase = 1;
+  hintVisible = false;
   shakeTime = 0;
   activeTornado = null;
   restartBtn.style.display = "none";
   requestAnimationFrame(gameLoop);
 }
 
-function gameLoop() {
+function gameLoop(timestamp) {
   let offsetX = 0, offsetY = 0;
   if (shakeTime > 0) {
     shakeTime -= 16;
@@ -268,24 +330,44 @@ function gameLoop() {
   checkFlameCollection(player);
 
   if (!window.obstacleTimer || performance.now() - window.obstacleTimer > 1500) {
-    spawnObstacle(canvas.width, canvas.height - groundHeight);
+    if (boss && !hintVisible && obstacles.length >= 2) {
+      showPowerHint();
+    } else {
+      spawnObstacle(canvas.width, canvas.height - groundHeight);
+    }
     window.obstacleTimer = performance.now();
   }
 
   updateObstacles(player);
   drawObstacles(ctx);
-
+  drawPowerHint();
   drawLightningTrail();
   drawPowerFX();
   drawPlayer();
   drawTornadoFX();
+  drawBoss();
+
+  if (boss) {
+    boss.x -= boss.speed;
+
+    if (boss.x < player.x + player.width && player.activePower === boss.weakness) {
+      console.log("✅ Boss defeated!");
+      boss = null;
+      hintVisible = false;
+    } else if (boss.x < player.x - 100) {
+      ctx.fillStyle = "#ff0000";
+      ctx.font = "48px sans-serif";
+      ctx.fillText("💀 YOU WERE DEFEATED BY THE BOSS 💀", canvas.width / 2 - 300, canvas.height / 2);
+      restartBtn.style.display = "block";
+      return;
+    }
+  }
 
   if (checkCollision(player) && player.activePower !== "shieldBarrier") {
     ctx.fillStyle = "#ff0000";
     ctx.font = "48px sans-serif";
     ctx.fillText("💥 GAME OVER 💥", canvas.width / 2 - 150, canvas.height / 2);
     restartBtn.style.display = "block";
-    if (shakeTime > 0) ctx.restore();
     return;
   }
 
@@ -304,17 +386,15 @@ function gameLoop() {
   ctx.fillText(`🟣 Abyssal: ${flameCounters.abyssal}`, 30, 80);
   ctx.fillText(`🔥 Multiplier: x${flameMultiplier}`, 30, 100);
 
-let hudY = 130;
-for (const key in powers) {
-  const power = powers[key];
-  const isReady = performance.now() - power.lastUsed >= power.cooldown;
-  const isUnlocked = power.unlocked;
-  const status = !isUnlocked ? "🔒 LOCKED" : isReady ? "✅ READY" : "⏳ COOLING";
-
-  ctx.fillStyle = isUnlocked ? (isReady ? "#00ff00" : "#ffaa00") : "#999999";
-  ctx.fillText(`${power.name.padEnd(14)}: ${status}`, 30, hudY);
-  hudY += 20;
-}
+  let hudY = 130;
+  for (const key in powers) {
+    const power = powers[key];
+    const isReady = performance.now() - power.lastUsed >= power.cooldown;
+    const status = !power.unlocked ? "🔒 LOCKED" : isReady ? "✅ READY" : "⏳ COOLING";
+    ctx.fillStyle = power.unlocked ? (isReady ? "#00ff00" : "#ffaa00") : "#999999";
+    ctx.fillText(`${power.name.padEnd(14)}: ${status}`, 30, hudY);
+    hudY += 20;
+  }
 
   if (player.activePower) {
     player.powerTimer -= 16;
@@ -325,6 +405,12 @@ for (const key in powers) {
       player.speedBoost = false;
       player.jumpCount = 1;
     }
+  }
+
+  if (!bossSpawnTimer) bossSpawnTimer = performance.now();
+  if (performance.now() - bossSpawnTimer > bossInterval && !boss) {
+    spawnBoss();
+    bossSpawnTimer = performance.now();
   }
 
   if (shakeTime > 0) ctx.restore();
