@@ -5,6 +5,7 @@ import {
   checkCollision,
   obstacles
 } from './obstacles.js';
+const pauseOverlay = document.getElementById("pauseOverlay");
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
@@ -442,6 +443,7 @@ function resetGame() {
   paused = false;
   pauseBtn.textContent = "⏸ Pause";
   restartBtn.style.display = "none";
+  pauseOverlay.style.display = "none";
 
   requestAnimationFrame(gameLoop);
 }
@@ -450,14 +452,19 @@ function resetGame() {
 function gameLoop(timestamp) {
   let offsetX = 0, offsetY = 0;
   if (paused) {
-  ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  pauseOverlay.style.display = "block"; // 👈 show blur
+
   ctx.fillStyle = "#ffffff";
   ctx.font = "48px monospace";
   ctx.fillText("⏸ PAUSED", canvas.width / 2 - 100, canvas.height / 2);
+  
   requestAnimationFrame(gameLoop);
   return;
+} else {
+  pauseOverlay.style.display = "none"; // 👈 hide blur
+  pauseBtn.disabled = true;
 }
+
 
 
   if (shakeTime > 0) {
