@@ -406,14 +406,6 @@ function drawGround() {
 
 function resetGame() {
   Object.assign(flameCounters, { dark: 0, violet: 0, abyssal: 0 });
-  flameMultiplier = 1;
-  flameStreak = 0;
-
-  for (const key in powers) {
-    powers[key].unlocked = false;
-    powers[key].lastUsed = 0;
-  }
-
   Object.assign(player, {
     x: 100,
     y: canvas.height - groundHeight - player.height,
@@ -423,23 +415,34 @@ function resetGame() {
     hasLightningTrail: false,
     activePower: null,
     powerTimer: 0,
-    speedBoost: false,
     gravity: 0.8,
-    jumpCount: 1,
-    maxJumps: 2
+    speedBoost: false,
+    jumpCount: 1
   });
 
+  for (const key in powers) {
+    powers[key].unlocked = false;
+    powers[key].lastUsed = 0;
+  }
+
+  flameMultiplier = 1;
+  flameStreak = 0;
   flames.length = 0;
   obstacles.length = 0;
   boss = null;
   bossActive = false;
   bossPhase = 1;
   hintVisible = false;
-  shakeTime = 0;
-  activeTornado = null;
-  restartBtn.style.display = "none";
   bossProjectiles = [];
   bossExplosions = [];
+  activeTornado = null;
+  shakeTime = 0;
+  shakeIntensity = 0;
+  pauseBtn.disabled = false;
+  paused = false;
+  pauseBtn.textContent = "⏸ Pause";
+  restartBtn.style.display = "none";
+
   requestAnimationFrame(gameLoop);
 }
 
@@ -447,14 +450,15 @@ function resetGame() {
 function gameLoop(timestamp) {
   let offsetX = 0, offsetY = 0;
   if (paused) {
-    ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "48px monospace";
-    ctx.fillText("⏸ PAUSED", canvas.width / 2 - 100, canvas.height / 2);
-    requestAnimationFrame(gameLoop);
-    return;
-  }
+  ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "48px monospace";
+  ctx.fillText("⏸ PAUSED", canvas.width / 2 - 100, canvas.height / 2);
+  requestAnimationFrame(gameLoop);
+  return;
+}
+
 
   if (shakeTime > 0) {
     shakeTime -= 16;
@@ -515,7 +519,7 @@ function gameLoop(timestamp) {
   
   // Optional: freeze frame for clarity
   cancelAnimationFrame(gameLoop); // only if needed
-
+     pauseBtn.disabled = true;
   return; // 💥 Stop the loop
 }
 
@@ -567,6 +571,7 @@ if (boss) {
     ctx.font = "48px sans-serif";
     ctx.fillText("💥 GAME OVER 💥", canvas.width / 2 - 150, canvas.height / 2);
     restartBtn.style.display = "block";
+     pauseBtn.disabled = true;
     return;
   }
 
@@ -644,6 +649,23 @@ window.addEventListener("keydown", e => {
   };
   if (keyBindings[e.code]) usePower(keyBindings[e.code]);
 });
+// Pause Button Toggle
+const pauseBtn = document.getElementById("pauseBtn");
+
+pauseBtn.addEventListener("click", () => {
+  if (pauseBtn.disabled) return;
+  paused = !paused;
+  pauseBtn.textContent = paused ? "▶️ Resume" : "⏸ Pause";
+});
+
+// Esc key to toggle pause
+window.addEventListener("keydown", e => {
+  if (e.code === "Escape" && !pauseBtn.disabled) {
+    paused = !paused;
+    pauseBtn.textContent = paused ? "▶️ Resume" : "⏸ Pause";
+  }
+});
+
 
 restartBtn.addEventListener("click", resetGame);
 requestAnimationFrame(gameLoop);
