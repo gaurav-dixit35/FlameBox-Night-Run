@@ -17,6 +17,7 @@ const groundHeight = 100;
 let activeTornado = null;
 let shakeTime = 0;
 let shakeIntensity = 0;
+let paused = false;
 
 // 🧠 Boss variables
 let bossSpawnTimer = 0;
@@ -445,6 +446,16 @@ function resetGame() {
 
 function gameLoop(timestamp) {
   let offsetX = 0, offsetY = 0;
+  if (paused) {
+    ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "48px monospace";
+    ctx.fillText("⏸ PAUSED", canvas.width / 2 - 100, canvas.height / 2);
+    requestAnimationFrame(gameLoop);
+    return;
+  }
+
   if (shakeTime > 0) {
     shakeTime -= 16;
     offsetX = (Math.random() - 0.5) * shakeIntensity;
