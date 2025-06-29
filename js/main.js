@@ -31,7 +31,7 @@ let hintStartTime = 0;
 let hintDisplayTimer = 5000; // How long the hint stays visible
 
 const bossWeaknessOptions = ["powerPunch", "tornado", "shieldBarrier"];
-
+//Boss aa gaya
 function spawnBoss() {
   bossSolutionKey = bossWeaknessOptions[Math.floor(Math.random() * bossWeaknessOptions.length)];
   boss = {
