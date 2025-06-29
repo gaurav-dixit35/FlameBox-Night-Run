@@ -74,6 +74,120 @@ function drawPowerHint() {
   ctx.font = "28px bold sans-serif";
   ctx.fillText(`⚠️ Use ${powers[bossSolutionKey].name} to defeat the BOSS!`, canvas.width / 2 - 200, 100);
 }
+//flame
+let bossProjectiles = [];
+let bossShootCooldown = 3000;
+let lastBossShotTime = 0;
+//exploding
+let bossExplosions = [];
+
+function updateExplosions() {
+  for (let i = bossExplosions.length - 1; i >= 0; i--) {
+    const ex = bossExplosions[i];
+    ex.radius += 2;
+    ex.opacity -= 0.05;
+    if (ex.opacity <= 0) bossExplosions.splice(i, 1);
+  }
+}
+
+function drawExplosions() {
+  for (const ex of bossExplosions) {
+    ctx.save();
+    ctx.globalAlpha = ex.opacity;
+    ctx.strokeStyle = "#ff3300";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(ex.x, ex.y, ex.radius, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+function fireBossProjectile() {
+  if (boss && boss.active) {
+    bossProjectiles.push({
+      x: boss.x,
+      y: boss.y + boss.height / 2,
+      width: 10,
+      height: 10,
+      speed: 5,
+      color: "#ff3300"
+    });
+    if (boss && boss.active) {
+  // Fire every 2 seconds
+  if (!boss.lastFire || performance.now() - boss.lastFire > 2000) {
+    fireBossProjectile();
+    boss.lastFire = performance.now();
+  }
+}
+
+  }
+}
+
+
+//attack
+function updateBossAttack() {
+  if (!boss || !boss.active) return;
+
+  const now = performance.now();
+  if (now - lastBossShotTime > bossShootCooldown) {
+    bossProjectiles.push({
+      x: boss.x,
+      y: boss.y + boss.height / 2,
+      width: 20,
+      height: 20,
+      speed: 5 + bossPhase * 0.5,
+      color: "#ff3300"
+      
+    });
+    lastBossShotTime = now;
+    
+  }
+
+  for (let i = bossProjectiles.length - 1; i >= 0; i--) {
+  const proj = bossProjectiles[i];
+  proj.x -= proj.speed;
+
+  if (proj.x + proj.width < 0) {
+    bossExplosions.push({
+      x: proj.x + proj.width / 2,
+      y: proj.y + proj.height / 2,
+      radius: 10,
+      opacity: 0.6
+    });
+    bossProjectiles.splice(i, 1);
+  }
+}
+
+}
+
+function drawBossProjectiles() {
+  for (const proj of bossProjectiles) {
+    ctx.fillStyle = proj.color;
+    ctx.fillRect(proj.x, proj.y, proj.width, proj.height);
+  }
+}
+
+function checkBossProjectileCollision() {
+  for (const proj of bossProjectiles) {
+    const hit =
+      player.x < proj.x + proj.width &&
+      player.x + player.width > proj.x &&
+      player.y < proj.y + proj.height &&
+      player.y + player.height > proj.y;
+
+    if (hit && player.activePower !== "shieldBarrier") {
+  bossExplosions.push({
+    x: proj.x + proj.width / 2,
+    y: proj.y + proj.height / 2,
+    radius: 10,
+    opacity: 1
+  });
+  return true;
+}
+
+  }
+  return false;
+}
 
 // 🧍‍♂️ Player setup
 const player = {
@@ -84,14 +198,19 @@ const player = {
   color: "#ffffff",
   dy: 0,
   gravity: 0.8,
-  jumpPower: -15,
+  jumpPower: -12,
+  superJumpPower: -20, // 🔼 2x jump height
+
   isJumping: false,
   animation: { powerPunchActive: false, powerPunchTimer: 0 },
   trail: [],
   trailTimer: 0,
   hasLightningTrail: false,
   activePower: null,
-  powerTimer: 0
+  powerTimer: 0,
+  jumpCount: 1,
+  maxJumps: 2
+
 };
 
 // 🔥 Powers
@@ -263,6 +382,7 @@ function drawPlayer() {
   }
   ctx.fillStyle = player.color;
   ctx.fillRect(player.x, player.y, player.width, player.height);
+  
 }
 
 function updatePlayer() {
@@ -270,6 +390,8 @@ function updatePlayer() {
   player.y += player.dy;
   if (player.y + player.height > canvas.height - groundHeight) {
     player.y = canvas.height - groundHeight - player.height;
+    player.jumpCount = player.maxJumps;
+
     player.dy = 0;
     player.isJumping = false;
     if (player.speedBoost) player.x += 4;
@@ -283,11 +405,29 @@ function drawGround() {
 
 function resetGame() {
   Object.assign(flameCounters, { dark: 0, violet: 0, abyssal: 0 });
+  flameMultiplier = 1;
+  flameStreak = 0;
+
+  for (const key in powers) {
+    powers[key].unlocked = false;
+    powers[key].lastUsed = 0;
+  }
+
   Object.assign(player, {
-    x: 100, y: canvas.height - groundHeight - player.height,
-    dy: 0, isJumping: false, trail: [], hasLightningTrail: false,
-    activePower: null
+    x: 100,
+    y: canvas.height - groundHeight - player.height,
+    dy: 0,
+    isJumping: false,
+    trail: [],
+    hasLightningTrail: false,
+    activePower: null,
+    powerTimer: 0,
+    speedBoost: false,
+    gravity: 0.8,
+    jumpCount: 1,
+    maxJumps: 2
   });
+
   flames.length = 0;
   obstacles.length = 0;
   boss = null;
@@ -297,8 +437,11 @@ function resetGame() {
   shakeTime = 0;
   activeTornado = null;
   restartBtn.style.display = "none";
+  bossProjectiles = [];
+  bossExplosions = [];
   requestAnimationFrame(gameLoop);
 }
+
 
 function gameLoop(timestamp) {
   let offsetX = 0, offsetY = 0;
@@ -337,6 +480,7 @@ function gameLoop(timestamp) {
     }
     window.obstacleTimer = performance.now();
   }
+  
 
   updateObstacles(player);
   drawObstacles(ctx);
@@ -346,6 +490,50 @@ function gameLoop(timestamp) {
   drawPlayer();
   drawTornadoFX();
   drawBoss();
+  drawBoss();
+  updateBossAttack();
+  drawBossProjectiles();
+  updateExplosions();
+  drawExplosions();
+  if (checkBossProjectileCollision()) {
+  ctx.fillStyle = "#ff0000";
+  ctx.font = "48px sans-serif";
+  ctx.fillText("💀 HIT BY BOSS ATTACK 💀", canvas.width / 2 - 200, canvas.height / 2);
+
+  restartBtn.style.display = "block";
+  
+  // Optional: freeze frame for clarity
+  cancelAnimationFrame(gameLoop); // only if needed
+
+  return; // 💥 Stop the loop
+}
+
+
+
+  // 🩸 Draw boss health bar
+if (boss) {
+  const barWidth = 200;
+  const barHeight = 20;
+  const healthRatio = boss.health / (3 + (bossPhase - 1) * 2); // max health per phase
+  ctx.fillStyle = "#000000";
+  ctx.fillRect(canvas.width / 2 - barWidth / 2, 50, barWidth, barHeight);
+  ctx.fillStyle = "#ff3333";
+  ctx.fillRect(canvas.width / 2 - barWidth / 2, 50, barWidth * healthRatio, barHeight);
+  ctx.strokeStyle = "#ffffff";
+  ctx.strokeRect(canvas.width / 2 - barWidth / 2, 50, barWidth, barHeight);
+
+  // 💥 Boss charge behavior animation
+  if (!boss.chargeTimer) boss.chargeTimer = 0;
+  boss.chargeTimer += 16;
+  if (boss.chargeTimer >= 2000) { // every 2s
+    boss.x -= boss.speed * 2; // faster charge
+    boss.chargeTimer = 0;
+    // Optional shake
+    shakeTime = 300;
+    shakeIntensity = 4;
+  }
+}
+
 
   if (boss) {
     boss.x -= boss.speed;
@@ -419,13 +607,21 @@ function gameLoop(timestamp) {
 
 window.addEventListener("keydown", e => {
   if (e.code === "Space") {
-    if (!player.jumpCount) player.jumpCount = 1;
     if (player.jumpCount > 0) {
       player.dy = player.jumpPower;
       player.isJumping = true;
       player.jumpCount--;
     }
   }
+
+  if (e.code === "KeyN") {
+    if (player.jumpCount > 0) {
+      player.dy = player.superJumpPower;
+      player.isJumping = true;
+      player.jumpCount--;
+    }
+  }
+
   const keyBindings = {
     KeyP: "powerPunch",
     KeyB: "shieldBarrier",

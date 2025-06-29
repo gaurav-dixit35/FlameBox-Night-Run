@@ -6,15 +6,32 @@ export function spawnObstacle(canvasWidth, groundY) {
   const rand = Math.random();
   let type = "default";
 
-  if (rand < 0.2) type = "gravityBlock";
-  else if (rand < 0.4) type = "crushPanel";
-  else if (rand < 0.6) type = "phaseBomb";
+  // ❗ Restrict special obstacles during boss/hint phase
+  if (typeof window.boss !== 'undefined' && (window.boss || window.hintVisible)) {
+    type = "default";
+  } else {
+    if (rand < 0.2) type = "gravityBlock";
+    else if (rand < 0.4) type = "crushPanel";
+    else if (rand < 0.6) type = "phaseBomb";
+    else if (rand < 0.75) type = "titanBlock"; // NEW 🟡
+  }
+
+  // 🎯 Custom Y and Height logic
+  let height = 50;
+  let yPos = groundY - height;
+
+  if (type === "crushPanel") {
+    yPos = groundY - 120; // anti-gravity float
+  } else if (type === "titanBlock") {
+    height = 150;
+    yPos = groundY - height;
+  }
 
   const obstacle = {
     x: canvasWidth + Math.random() * 100,
-    y: groundY - 50,
+    y: yPos,
     width: 40,
-    height: 50,
+    height,
     speed: 6,
     type,
     visible: true,
@@ -23,11 +40,15 @@ export function spawnObstacle(canvasWidth, groundY) {
     phaseTimer: 0,
     color: type === "phaseBomb" ? "#ff00ff" :
            type === "crushPanel" ? "#ff6600" :
-           type === "gravityBlock" ? "#3399ff" : "#ff3333"
+           type === "gravityBlock" ? "#3399ff" :
+           type === "titanBlock" ? "#ffcc00" : "#ff3333"
   };
 
   obstacles.push(obstacle);
 }
+
+
+
 
 export function updateObstacles(player) {
   for (let i = obstacles.length - 1; i >= 0; i--) {
