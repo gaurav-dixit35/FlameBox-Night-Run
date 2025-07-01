@@ -10,7 +10,7 @@ const pauseOverlay = document.getElementById("pauseOverlay");
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 const restartBtn = document.getElementById("restartBtn");
-
+const pauseBtn = document.getElementById("pauseBtn");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
@@ -19,6 +19,7 @@ let activeTornado = null;
 let shakeTime = 0;
 let shakeIntensity = 0;
 let paused = false;
+let isPaused = false;
 
 // 🧠 Boss variables
 let bossSpawnTimer = 0;
@@ -478,6 +479,18 @@ function gameLoop(timestamp) {
   ctx.clearRect(-offsetX, -offsetY, canvas.width, canvas.height);
   drawGround();
   updatePlayer();
+  //is paused
+  if (isPaused) {
+  ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "48px sans-serif";
+  ctx.fillText("⏸ PAUSED", canvas.width / 2 - 100, canvas.height / 2);
+  if (shakeTime > 0) ctx.restore();
+  requestAnimationFrame(gameLoop);
+  return;
+}
 
   if (player.hasLightningTrail) {
     player.trailTimer -= 16;
@@ -657,20 +670,26 @@ window.addEventListener("keydown", e => {
   if (keyBindings[e.code]) usePower(keyBindings[e.code]);
 });
 // Pause Button Toggle
-const pauseBtn = document.getElementById("pauseBtn");
 
 pauseBtn.addEventListener("click", () => {
-  if (pauseBtn.disabled) return;
-  paused = !paused;
-  pauseBtn.textContent = paused ? "▶️ Resume" : "⏸ Pause";
+  if (!document.getElementById("restartBtn").style.display.includes("none")) return; // Don't pause if game over
+  isPaused = !isPaused;
+  pauseBtn.textContent = isPaused ? "▶" : "⏸";
 });
+
 
 // Esc key to toggle pause
 window.addEventListener("keydown", e => {
   if (e.code === "Escape" && !pauseBtn.disabled) {
     paused = !paused;
-    pauseBtn.textContent = paused ? "▶️ Resume" : "⏸ Pause";
+    pauseBtn.textContent = paused ? "▶" : "⏸";
   }
+  if (e.code === "Escape") {
+    if (!document.getElementById("restartBtn").style.display.includes("none")) return;
+    isPaused = !isPaused;
+    pauseBtn.textContent = isPaused ? "▶" : "⏸";
+  }
+
 });
 
 
