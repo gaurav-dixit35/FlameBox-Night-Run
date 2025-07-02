@@ -445,6 +445,9 @@ function resetGame() {
   pauseBtn.textContent = "⏸ Pause";
   restartBtn.style.display = "none";
   pauseOverlay.style.display = "none";
+  // ✅ Reset boss spawn timer here
+  bossSpawnTimer = performance.now();
+
 
   requestAnimationFrame(gameLoop);
 }
