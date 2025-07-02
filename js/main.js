@@ -517,7 +517,7 @@ function gameLoop(timestamp) {
   }
   
 
-  updateObstacles(player);
+  updateObstacles(player, canvas.height - groundHeight);
   drawObstacles(ctx);
   drawPowerHint();
   drawLightningTrail();

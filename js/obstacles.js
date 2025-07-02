@@ -2,6 +2,7 @@
 
 export const obstacles = [];
 
+
 export function spawnObstacle(canvasWidth, groundY) {
   const rand = Math.random();
   let type = "default";
@@ -14,6 +15,7 @@ export function spawnObstacle(canvasWidth, groundY) {
     else if (rand < 0.4) type = "crushPanel";
     else if (rand < 0.6) type = "phaseBomb";
     else if (rand < 0.75) type = "titanBlock"; // NEW 🟡
+    else if (rand < 0.8) type = "antiblock";
   }
 
   // 🎯 Custom Y and Height logic
@@ -39,18 +41,23 @@ export function spawnObstacle(canvasWidth, groundY) {
     triggered: false,
     phaseTimer: 0,
     color: type === "phaseBomb" ? "#ff00ff" :
-           type === "crushPanel" ? "#ff6600" :
-           type === "gravityBlock" ? "#3399ff" :
-           type === "titanBlock" ? "#ffcc00" : "#ff3333"
+          type === "crushPanel" ? "#ff6600" :
+          type === "gravityBlock" ? "#3399ff" :
+          type === "titanBlock" ? "#ffcc00" :
+          type === "antiblock" ? "#99ddaa" :
+          "#ff3333"
+
+
   };
 
   obstacles.push(obstacle);
+  
 }
 
 
 
 
-export function updateObstacles(player) {
+export function updateObstacles(player, groundY){
   for (let i = obstacles.length - 1; i >= 0; i--) {
     const obs = obstacles[i];
     obs.x -= obs.speed;
@@ -80,6 +87,17 @@ export function updateObstacles(player) {
     if (obs.x + obs.width < 0 || obs.y > player.y + 400) {
       obstacles.splice(i, 1);
     }
+    if (obs.type === "antiblock") {
+      const triggerDistance = 100;
+      if (!obs.triggered && Math.abs(player.x - obs.x) < triggerDistance) {
+        obs.triggered = true;
+      }
+      if (obs.triggered) {
+        obs.y -= 8;
+        if (obs.y < groundY - 200) obs.y = groundY - 200;
+      }
+    }
+
   }
 }
 
