@@ -13,11 +13,11 @@ bgMusic.volume = 0.5;
 
 const sfx = {
   jump: new Audio("./sounds/jump.wav"),
-  superJump: new Audio("./sounds/super-jump.wav"),
-  flame: new Audio("./sounds/flame-collect.wav"),
-  power: new Audio("./sounds/power-activate.wav"),
-  bossDefeat: new Audio("./sounds/boss-defeat.wav"),
-  gameOver: new Audio("./sounds/game-over.wav"),
+  superJump: new Audio("./sounds/super-jump.mp3"),
+  flame: new Audio("./sounds/flame-collect.mp3"),
+  power: new Audio("./sounds/power-activate.mp3"),
+  bossDefeat: new Audio("./sounds/boss-defeat.mp3"),
+  gameOver: new Audio("./sounds/game-over.mp3"),
 };
 
 const pauseOverlay = document.getElementById("pauseOverlay");
