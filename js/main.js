@@ -770,6 +770,17 @@ if (boss) {
   if (shakeTime > 0) ctx.restore();
   requestAnimationFrame(gameLoop);
 }
+let audioStarted = false;
+
+function startAudio() {
+  if (!audioStarted) {
+    bgMusic.play().catch(err => console.log("Audio play blocked:", err));
+    audioStarted = true;
+  }
+}
+
+window.addEventListener("keydown", startAudio, { once: true });
+window.addEventListener("click", startAudio, { once: true });
 
 window.addEventListener("keydown", e => {
   if (e.code === "Space") {
