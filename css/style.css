@@ -83,3 +83,12 @@ body {
   50% { transform: translateY(-100px) translateX(50px); }
   100% { transform: translateY(0) translateX(0); }
 }
+#splashScreen #credits {
+  position: absolute;
+  top: 10px;
+  right: 20px;
+  font-size: 14px;
+  color: #aaa;
+  font-family: monospace;
+  opacity: 0.8;
+}
