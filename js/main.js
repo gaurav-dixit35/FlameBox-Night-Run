@@ -595,7 +595,7 @@ for (let i = 0; i < 5; i++) {
 // Hide splash screen after 2 seconds
 setTimeout(() => {
   splashScreen.style.display = "none";
-}, 2000);
+}, 4000);
 
   if (player.hasLightningTrail) {
     player.trailTimer -= 16;
