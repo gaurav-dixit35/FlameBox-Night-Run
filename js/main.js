@@ -6,6 +6,19 @@ import {
   obstacles
 } from './obstacles.js';
 import { loadHighScore, saveHighScore } from "./firebase.js";
+//sound
+const bgMusic = new Audio("./sounds/background-music.mp3");
+bgMusic.loop = true;
+bgMusic.volume = 0.5;
+
+const sfx = {
+  jump: new Audio("./sounds/jump.wav"),
+  superJump: new Audio("./sounds/super-jump.wav"),
+  flame: new Audio("./sounds/flame-collect.wav"),
+  power: new Audio("./sounds/power-activate.wav"),
+  bossDefeat: new Audio("./sounds/boss-defeat.wav"),
+  gameOver: new Audio("./sounds/game-over.wav"),
+};
 
 const pauseOverlay = document.getElementById("pauseOverlay");
 
