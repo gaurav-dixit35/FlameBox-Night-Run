@@ -12,7 +12,7 @@ bgMusic.loop = true;
 bgMusic.volume = 0.5;
 
 const sfx = {
-  jump: new Audio("./sounds/jump.wav"),
+  jump: new Audio("./sounds/jump.mp3"),
   superJump: new Audio("./sounds/super-jump.mp3"),
   flame: new Audio("./sounds/flame-collect.mp3"),
   power: new Audio("./sounds/power-activate.mp3"),
@@ -140,7 +140,7 @@ function fireBossProjectile() {
     });
     if (boss && boss.active) {
   // Fire every 2 seconds
-  if (!boss.lastFire || performance.now() - boss.lastFire > 2000) {
+  if (!boss.lastFire || performance.now() - boss.lastFire > 3000) {
     fireBossProjectile();
     boss.lastFire = performance.now();
   }
@@ -299,6 +299,8 @@ function checkFlameCollection(player) {
     if (hit) {
       f.collected = true;
       collected++;
+      sfx.flame.play();
+
       flameCounters[f.type] += flameMultiplier;
       if (f.type === "abyssal") {
         player.hasLightningTrail = true;
@@ -326,6 +328,8 @@ function usePower(key) {
   flameCounters[power.type] -= power.cost;
   power.lastUsed = now;
   player.activePower = key;
+  sfx.power.play();
+
 
   if (key === "powerPunch") {
     player.animation.powerPunchActive = true;
@@ -503,6 +507,12 @@ function resetGame() {
 
 
   requestAnimationFrame(gameLoop);
+  window.addEventListener("keydown", () => {
+      bgMusic.play().catch(() => {});
+  }, 
+  { once: true });
+
+
 }
 
 
@@ -681,6 +691,8 @@ if (boss) {
     if (boss.x < player.x + player.width && player.activePower === boss.weakness) {
       console.log("✅ Boss defeated!");
       boss = null;
+      sfx.bossDefeat.play();
+
       hintVisible = false;
     } else if (boss.x < player.x - 100) {
       ctx.fillStyle = "#ff0000";
@@ -707,6 +719,8 @@ if (boss) {
     }
 
      pauseBtn.disabled = true;
+     sfx.gameOver.play();
+
     return;
   }
 
@@ -763,16 +777,20 @@ window.addEventListener("keydown", e => {
       player.dy = player.jumpPower;
       player.isJumping = true;
       player.jumpCount--;
+      sfx.jump.play();
     }
   }
+
 
   if (e.code === "KeyN") {
     if (player.jumpCount > 0) {
       player.dy = player.superJumpPower;
       player.isJumping = true;
       player.jumpCount--;
+      sfx.superJump.play();
     }
   }
+
 
   const keyBindings = {
     KeyP: "powerPunch",
