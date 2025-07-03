@@ -26,3 +26,60 @@ body {
   z-index: 999;
   display: none;
 }
+#splashScreen {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at center, #000 50%, #111 100%);
+  z-index: 999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #fff;
+  font-family: 'Orbitron', sans-serif;
+  overflow: hidden;
+}
+
+.splash-content {
+  text-align: center;
+}
+
+.flame-icon {
+  font-size: 80px;
+  animation: glow 1.5s infinite alternate ease-in-out;
+}
+
+#splashScreen h1 {
+  font-size: 48px;
+  color: #ffaa00;
+  text-shadow: 0 0 10px #ff6600, 0 0 20px #ff3300;
+}
+
+#splashScreen h1 span {
+  color: #ffcc33;
+}
+
+#splashScreen p {
+  margin: 5px;
+  font-size: 20px;
+  color: #ccc;
+}
+
+@keyframes glow {
+  0% { text-shadow: 0 0 5px #ff6600, 0 0 10px #ff3300; }
+  100% { text-shadow: 0 0 15px #ffaa00, 0 0 30px #ff6600; }
+}
+
+.floating {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  opacity: 0.6;
+  animation: float 4s linear infinite;
+}
+
+@keyframes float {
+  0% { transform: translateY(0) translateX(0); }
+  50% { transform: translateY(-100px) translateX(50px); }
+  100% { transform: translateY(0) translateX(0); }
+}

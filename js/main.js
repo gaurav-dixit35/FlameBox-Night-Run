@@ -5,6 +5,8 @@ import {
   checkCollision,
   obstacles
 } from './obstacles.js';
+import { loadHighScore, saveHighScore } from "./firebase.js";
+
 const pauseOverlay = document.getElementById("pauseOverlay");
 
 const canvas = document.getElementById("gameCanvas");
@@ -15,6 +17,14 @@ canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
 const groundHeight = 100;
+const groundSegments = [];
+const segmentWidth = 100;
+const groundSpeed = 6;
+
+for (let i = 0; i <= canvas.width / segmentWidth + 2; i++) {
+  groundSegments.push({ x: i * segmentWidth });
+}
+
 let activeTornado = null;
 let shakeTime = 0;
 let shakeIntensity = 0;
@@ -222,7 +232,6 @@ const powers = {
   shieldBarrier: { name: "B(Shield Barrier)", cost: 15, type: "dark", cooldown: 20000, lastUsed: 0, unlocked: false },
   tornado: { name: "T(Tornado)", cost: 15, type: "violet", cooldown: 60000, lastUsed: 0, unlocked: false },
   fiveJump: { name: "J(5x Jump)", cost: 20, type: "dark", cooldown: 30000, lastUsed: 0, unlocked: false },
-  jumpBack: { name: "R(Jump Back)", cost: 9, type: "dark", cooldown: 20000, lastUsed: 0, unlocked: false },
   gravityShift: { name: "G(Gravity Shift)", cost: 2, type: "violet", cooldown: 45000, lastUsed: 0, unlocked: false },
   flashRunner: { name: "H(Flash Runner)", cost: 4, type: "violet", cooldown: 90000, lastUsed: 0, unlocked: false }
 };
@@ -232,6 +241,12 @@ let flameMultiplier = 1;
 let flameStreak = 0;
 const maxMultiplier = 5;
 const flames = [];
+let distance = 0;
+let lastDistanceUpdate = performance.now();
+let highScore = 0;
+loadHighScore().then(score => {
+  highScore = score || 0;
+});
 
 function spawnFlame(canvasWidth, groundY) {
   const rand = Math.random();
@@ -321,7 +336,7 @@ function usePower(key) {
       opacity: 1
     };
   } else if (key === "fiveJump") { player.jumpCount = 5; player.powerTimer = 7000; }
-  else if (key === "jumpBack") { player.x -= 100; }
+  
   else if (key === "gravityShift") { player.gravity = 0.2; player.powerTimer = 4000; }
   else if (key === "flashRunner") { player.speedBoost = true; player.powerTimer = 8000; }
 }
@@ -402,9 +417,32 @@ function updatePlayer() {
 }
 
 function drawGround() {
-  ctx.fillStyle = "#2f2f4f";
-  ctx.fillRect(0, canvas.height - groundHeight, canvas.width, groundHeight);
+  const y = canvas.height - groundHeight;
+
+  // 🌌 Nighttime gradient ground
+  const gradient = ctx.createLinearGradient(0, y, 0, y + groundHeight);
+  gradient.addColorStop(0, "#1e1e2e");  // top of ground
+  gradient.addColorStop(1, "#2a2a3d");  // bottom of ground
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, y, canvas.width, groundHeight);
+
+  // 🧱 Stylized segments
+  for (const seg of groundSegments) {
+    ctx.fillStyle = "#3b3b4f";
+    ctx.fillRect(seg.x, y + 12, segmentWidth - 6, 10);
+
+    // Optional: Add shadow effect under each segment
+    ctx.fillStyle = "rgba(0,0,0,0.3)";
+    ctx.fillRect(seg.x, y + 22, segmentWidth - 6, 4);
+  }
+
+  // 🌟 Thin glowing stripe at the top
+  ctx.fillStyle = "#555577";
+  ctx.fillRect(0, y, canvas.width, 2);
 }
+
+
+
 
 function resetGame() {
   Object.assign(flameCounters, { dark: 0, violet: 0, abyssal: 0 });
@@ -440,6 +478,8 @@ function resetGame() {
   activeTornado = null;
   shakeTime = 0;
   shakeIntensity = 0;
+  distance = 0;
+
   pauseBtn.disabled = false;
   paused = false;
   pauseBtn.textContent = "⏸ Pause";
@@ -457,6 +497,10 @@ function gameLoop(timestamp) {
   let offsetX = 0, offsetY = 0;
   if (paused) {
   pauseOverlay.style.display = "block"; // 👈 show blur
+    if (distance > highScore) {
+  highScore = distance;
+  saveHighScore(highScore);
+}
 
   ctx.fillStyle = "#ffffff";
   ctx.font = "48px monospace";
@@ -482,18 +526,53 @@ function gameLoop(timestamp) {
   ctx.clearRect(-offsetX, -offsetY, canvas.width, canvas.height);
   drawGround();
   updatePlayer();
+  //ground
+  for (const seg of groundSegments) {
+    seg.x -= groundSpeed;
+  }
+  if (groundSegments[0].x + segmentWidth < 0) {
+    groundSegments.shift();
+    const lastX = groundSegments[groundSegments.length - 1].x;
+    groundSegments.push({ x: lastX + segmentWidth });
+  }
+
+  const now = performance.now();
+    if (now - lastDistanceUpdate >= 333) { // ~3 per sec
+      distance += 1;
+      lastDistanceUpdate = now;
+    }
+
+
   //is paused
   if (isPaused) {
-  ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  ctx.fillStyle = "#ffffff";
-  ctx.font = "48px sans-serif";
-  ctx.fillText("⏸ PAUSED", canvas.width / 2 - 100, canvas.height / 2);
-  if (shakeTime > 0) ctx.restore();
-  requestAnimationFrame(gameLoop);
-  return;
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "48px sans-serif";
+    ctx.fillText("⏸ PAUSED", canvas.width / 2 - 100, canvas.height / 2);
+    if (shakeTime > 0) ctx.restore();
+    requestAnimationFrame(gameLoop);
+    return;
+  }
+  //splash screen
+  const splashScreen = document.getElementById("splashScreen");
+
+for (let i = 0; i < 5; i++) {
+  const flame = document.createElement("div");
+  flame.classList.add("floating");
+  const colors = ["#ff6600", "#ffcc00", "#ff3333", "#ff9933"];
+  flame.style.background = colors[Math.floor(Math.random() * colors.length)];
+  flame.style.left = `${Math.random() * 90}%`;
+  flame.style.bottom = `${Math.random() * 20 + 20}px`;
+  flame.style.animationDelay = `${Math.random() * 2}s`;
+  splashScreen.appendChild(flame);
 }
+
+// Hide splash screen after 2 seconds
+setTimeout(() => {
+  splashScreen.style.display = "none";
+}, 2000);
 
   if (player.hasLightningTrail) {
     player.trailTimer -= 16;
@@ -521,8 +600,14 @@ function gameLoop(timestamp) {
   
 
   updateObstacles(player, canvas.height - groundHeight);
-  drawObstacles(ctx);
+  drawObstacles(ctx, groundHeight);
+
   drawPowerHint();
+  // 🏆 Draw High Score in center of screen
+  ctx.fillStyle = "#ffff66";
+  ctx.font = "32px bold monospace";
+  ctx.fillText(`🏆 HIGH SCORE: ${highScore}`, canvas.width / 2 - 120, 70);
+
   drawLightningTrail();
   drawPowerFX();
   drawPlayer();
@@ -539,7 +624,11 @@ function gameLoop(timestamp) {
   ctx.fillText("💀 HIT BY BOSS ATTACK 💀", canvas.width / 2 - 200, canvas.height / 2);
 
   restartBtn.style.display = "block";
-  
+  if (distance > highScore) {
+  highScore = distance;
+  saveHighScore(highScore);
+}
+s
   // Optional: freeze frame for clarity
   cancelAnimationFrame(gameLoop); // only if needed
      pauseBtn.disabled = true;
@@ -585,6 +674,11 @@ if (boss) {
       ctx.font = "48px sans-serif";
       ctx.fillText("💀 YOU WERE DEFEATED BY THE BOSS 💀", canvas.width / 2 - 300, canvas.height / 2);
       restartBtn.style.display = "block";
+      if (distance > highScore) {
+        highScore = distance;
+        saveHighScore(highScore);
+      }
+
       return;
     }
   }
@@ -594,6 +688,11 @@ if (boss) {
     ctx.font = "48px sans-serif";
     ctx.fillText("💥 GAME OVER 💥", canvas.width / 2 - 150, canvas.height / 2);
     restartBtn.style.display = "block";
+    if (distance > highScore) {
+      highScore = distance;
+      saveHighScore(highScore);
+    }
+
      pauseBtn.disabled = true;
     return;
   }
@@ -605,9 +704,10 @@ if (boss) {
       console.log(`🔓 ${p.name} unlocked`);
     }
   }
-
   ctx.fillStyle = "#ffffff";
   ctx.font = "16px monospace";
+  ctx.fillText(`🏃 Distance: ${distance}`, 30, 20);
+
   ctx.fillText(`🔥 Dark: ${flameCounters.dark}`, 30, 40);
   ctx.fillText(`💜 Violet: ${flameCounters.violet}`, 30, 60);
   ctx.fillText(`🟣 Abyssal: ${flameCounters.abyssal}`, 30, 80);
@@ -617,7 +717,7 @@ if (boss) {
   for (const key in powers) {
     const power = powers[key];
     const isReady = performance.now() - power.lastUsed >= power.cooldown;
-    const status = !power.unlocked ? "🔒 LOCKED" : isReady ? "✅ READY" : "⏳ COOLING";
+    const status = !power.unlocked ? "🔒" : isReady ? "✅" : "⏳";
     ctx.fillStyle = power.unlocked ? (isReady ? "#00ff00" : "#ffaa00") : "#999999";
     ctx.fillText(`${power.name.padEnd(14)}: ${status}`, 30, hudY);
     hudY += 20;
@@ -666,9 +766,9 @@ window.addEventListener("keydown", e => {
     KeyB: "shieldBarrier",
     KeyT: "tornado",
     KeyJ: "fiveJump",
-    KeyR: "jumpBack",
     KeyG: "gravityShift",
     KeyF: "flashRunner"
+
   };
   if (keyBindings[e.code]) usePower(keyBindings[e.code]);
 });

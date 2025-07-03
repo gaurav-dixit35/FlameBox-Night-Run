@@ -20,7 +20,11 @@ export function spawnObstacle(canvasWidth, groundY) {
 
   // 🎯 Custom Y and Height logic
   let height = 50;
-  let yPos = groundY - height;
+    let yPos = groundY - height;
+    if (type === "antiblock") {
+      height = 100;
+      yPos = groundY - 40; // make it appear almost flush with ground
+    }
 
   if (type === "crushPanel") {
     yPos = groundY - 120; // anti-gravity float
@@ -28,7 +32,7 @@ export function spawnObstacle(canvasWidth, groundY) {
     height = 150;
     yPos = groundY - height;
   }
-
+  
   const obstacle = {
     x: canvasWidth + Math.random() * 100,
     y: yPos,
@@ -62,6 +66,7 @@ export function updateObstacles(player, groundY){
     const obs = obstacles[i];
     obs.x -= obs.speed;
 
+
     if (obs.type === "gravityBlock" || obs.type === "crushPanel") {
       const triggerDistance = 100;
       if (!obs.triggered && Math.abs(player.x - obs.x) < triggerDistance) {
@@ -70,8 +75,8 @@ export function updateObstacles(player, groundY){
     }
 
     if (obs.type === "gravityBlock" && obs.triggered) {
-      obs.fallSpeed += 0.5;
-      obs.y += obs.fallSpeed;
+      obs.x -= obs.speed * 1.5; // move faster forward
+      
     }
 
     if (obs.type === "crushPanel" && obs.triggered) {
@@ -88,27 +93,55 @@ export function updateObstacles(player, groundY){
       obstacles.splice(i, 1);
     }
     if (obs.type === "antiblock") {
-      const triggerDistance = 100;
-      if (!obs.triggered && Math.abs(player.x - obs.x) < triggerDistance) {
+      const distanceToPlayer = Math.abs(obs.x - player.x);
+
+      // Trigger jump if player is close and hasn't triggered already
+      if (!obs.triggered && distanceToPlayer < 120) {
         obs.triggered = true;
+        obs.jumpSpeed = -5; // upward movement
+        obs.gravity = 0.2;
       }
+
       if (obs.triggered) {
-        obs.y -= 8;
-        if (obs.y < groundY - 200) obs.y = groundY - 200;
-      }
+        obs.jumpSpeed += obs.gravity;
+        obs.y += obs.jumpSpeed;
+
+        // Prevent antiblock from rising too far
+        const maxRise = groundY - obs.height - 30;
+        if (obs.y < maxRise) {
+          obs.y = maxRise;
+          obs.jumpSpeed = 0;
+          obs.gravity = 0;
+        }
+     }
     }
+
 
   }
 }
 
-export function drawObstacles(ctx) {
+export function drawObstacles(ctx, groundHeight) {
   for (const obs of obstacles) {
     if (obs.type === "phaseBomb" && !obs.visible) continue;
 
-    ctx.fillStyle = obs.color;
-    ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+    // 🌿 Special clipping only for antiblock to hide its lower part
+    if (obs.type === "antiblock") {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, 0, ctx.canvas.width, ctx.canvas.height - groundHeight);
+      ctx.clip();
+      ctx.fillStyle = obs.color;
+      ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+      ctx.restore();
+    } else {
+      // Normal obstacles — no clipping
+      ctx.fillStyle = obs.color;
+      ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+    }
   }
 }
+
+
 
 export function checkCollision(player) {
   for (const obs of obstacles) {
