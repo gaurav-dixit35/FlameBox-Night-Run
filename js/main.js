@@ -6,10 +6,13 @@ import {
   obstacles
 } from './obstacles.js';
 import { loadHighScore, saveHighScore } from "./firebase.js";
-//sound
+
+// start bg
 const bgMusic = new Audio("./sounds/background-music.mp3");
 bgMusic.loop = true;
 bgMusic.volume = 0.5;
+
+let gameStarted = false; // we already added
 
 const sfx = {
   jump: new Audio("./sounds/jump.mp3"),
@@ -23,7 +26,6 @@ const sfx = {
 const pauseOverlay = document.getElementById("pauseOverlay");
 const splashScreen = document.getElementById("splashScreen");
 const startBtn = document.getElementById("startBtn");
-let gameStarted = false;
 
 
 const canvas = document.getElementById("gameCanvas");
@@ -597,10 +599,25 @@ for (let i = 0; i < 5; i++) {
   splashScreen.appendChild(flame);
 }
 
-// Hide splash screen after 2 seconds
-setTimeout(() => {
+//Start game
+function startGame() {
+  if (gameStarted) return;
   splashScreen.style.display = "none";
-}, 4000);
+  gameStarted = true;
+
+  bgMusic.play().catch((err) => {
+    console.warn("Autoplay blocked: ", err);
+  });
+
+}
+
+startBtn.addEventListener("click", startGame);
+window.addEventListener("keydown", e => {
+  if (!gameStarted && e.code === "Enter") {
+    startGame();
+  }
+});
+
 
   if (player.hasLightningTrail) {
     player.trailTimer -= 16;
