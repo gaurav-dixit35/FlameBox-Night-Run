@@ -21,6 +21,10 @@ const sfx = {
 };
 
 const pauseOverlay = document.getElementById("pauseOverlay");
+const splashScreen = document.getElementById("splashScreen");
+const startBtn = document.getElementById("startBtn");
+let gameStarted = false;
+
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
@@ -580,6 +584,7 @@ function gameLoop(timestamp) {
   }
   //splash screen
   const splashScreen = document.getElementById("splashScreen");
+  
 
 for (let i = 0; i < 5; i++) {
   const flame = document.createElement("div");
