@@ -839,4 +839,13 @@ window.addEventListener("keydown", e => {
 
 
 restartBtn.addEventListener("click", resetGame);
+// 🖱️ Enable Enter key to restart game
+window.addEventListener("keydown", (e) => {
+  if (e.code === "Enter") {
+    if (restartBtn.style.display !== "none") {
+      resetGame();
+    }
+  }
+});
+
 requestAnimationFrame(gameLoop);
