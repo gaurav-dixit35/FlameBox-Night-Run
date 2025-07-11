@@ -1,4 +1,14 @@
-I had added more obstacles and upgraded design,
-be connected for more new updates..
+Hello Developers, My new Game **FlameBox-NightRun** out now ...
 ---
-I will upload proper readme once it's completed..
+Right Now Theirs **only Desktop** version...
+
+Play Game : https://flamebox.netlify.app/
+---
+I will upload proper readme with all the important details you want..
+Till then Enjoy this Game...
+---
+If you found any bug or error, do not forget to inform...
+
+I will Love if you all will Contribute to this Game...
+
+Connect, Share, Contribute...<3
