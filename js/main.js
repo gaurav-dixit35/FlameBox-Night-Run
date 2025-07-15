@@ -419,8 +419,8 @@ function drawPlayer() {
     centerX, centerY, 10,
     centerX, centerY, 40
   );
-  gradient.addColorStop(0, "rgba(255,0,255,0.8)");
-  gradient.addColorStop(1, "rgba(255,0,255,0)");
+  gradient.addColorStop(0, "rgba(255,140,0,0.8)");
+  gradient.addColorStop(1, "rgba(255,140,0,0)");
 
   ctx.save();
   ctx.fillStyle = gradient;
@@ -432,14 +432,14 @@ function drawPlayer() {
   // Glowing outline when jumping
   if (player.isJumping) {
     ctx.save();
-    ctx.strokeStyle = "rgba(255, 255, 0, 0.6)";
+    ctx.strokeStyle = "rgba(24, 204, 120, 0.7)";
     ctx.lineWidth = 4;
     ctx.strokeRect(player.x - 2, player.y - 2, player.width + 4, player.height + 4);
     ctx.restore();
   }
 
   // Main body
-  ctx.fillStyle = "#5500cc"; // heroic dark-purple core
+  ctx.fillStyle = "#f1f1f1ff"; // heroic dark-purple core
   ctx.fillRect(player.x, player.y, player.width, player.height);
 
   // Sparks of power (always)
@@ -454,7 +454,7 @@ function drawPlayer() {
   // Flame trail when moving
   if (player.speedBoost || Math.abs(player.dy) > 0.5) {
     ctx.save();
-    ctx.fillStyle = "rgba(255,69,0,0.4)";
+    ctx.fillStyle = "rgba(255, 94, 0, 0.76)";
     for (let i = 0; i < 5; i++) {
       const fx = player.x - Math.random() * 20;
       const fy = player.y + Math.random() * player.height;
