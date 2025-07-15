@@ -414,7 +414,7 @@ function drawPlayer() {
   const centerX = player.x + player.width / 2;
   const centerY = player.y + player.height / 2;
 
-  // Outer glowing aura
+  // Outer glowing aura (always)
   const gradient = ctx.createRadialGradient(
     centerX, centerY, 10,
     centerX, centerY, 40
@@ -429,17 +429,41 @@ function drawPlayer() {
   ctx.fill();
   ctx.restore();
 
+  // Glowing outline when jumping
+  if (player.isJumping) {
+    ctx.save();
+    ctx.strokeStyle = "rgba(255, 255, 0, 0.6)";
+    ctx.lineWidth = 4;
+    ctx.strokeRect(player.x - 2, player.y - 2, player.width + 4, player.height + 4);
+    ctx.restore();
+  }
+
   // Main body
   ctx.fillStyle = "#5500cc"; // heroic dark-purple core
   ctx.fillRect(player.x, player.y, player.width, player.height);
 
-  // Sparks / particles
+  // Sparks of power (always)
   for (let i = 0; i < 3; i++) {
     const offsetX = Math.random() * player.width;
     const offsetY = Math.random() * player.height;
     const size = Math.random() * 2 + 1;
     ctx.fillStyle = "rgba(255, 215, 0, 0.7)";
     ctx.fillRect(player.x + offsetX, player.y + offsetY, size, size);
+  }
+
+  // Flame trail when moving
+  if (player.speedBoost || Math.abs(player.dy) > 0.5) {
+    ctx.save();
+    ctx.fillStyle = "rgba(255,69,0,0.4)";
+    for (let i = 0; i < 5; i++) {
+      const fx = player.x - Math.random() * 20;
+      const fy = player.y + Math.random() * player.height;
+      const radius = Math.random() * 3 + 1;
+      ctx.beginPath();
+      ctx.arc(fx, fy, radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
   }
 }
 
