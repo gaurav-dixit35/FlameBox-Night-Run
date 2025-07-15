@@ -83,12 +83,71 @@ function spawnBoss() {
 
 function drawBoss() {
   if (!boss) return;
-  ctx.fillStyle = boss.color;
+
+  const centerX = boss.x + boss.width / 2;
+  const centerY = boss.y + boss.height / 2;
+
+  const pulse = 5 * Math.sin(performance.now() / 300); // pulsing aura
+
+  // Shadow core
+  ctx.fillStyle = "#1a001a";
   ctx.fillRect(boss.x, boss.y, boss.width, boss.height);
-  ctx.strokeStyle = "#ff00ff";
-  ctx.lineWidth = 3;
-  ctx.strokeRect(boss.x - 2, boss.y - 2, boss.width + 4, boss.height + 4);
+
+  // Flickering aura
+  ctx.save();
+  const gradient = ctx.createRadialGradient(
+    centerX, centerY, 20,
+    centerX, centerY, boss.width / 1.2 + pulse
+  );
+  gradient.addColorStop(0, "rgba(120,0,120,0.6)");
+  gradient.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = gradient;
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, boss.width / 1.2 + pulse, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  // Eyes — flicker
+  const eyeIntensity = Math.random() > 0.1 ? 1 : 0.3; 
+  ctx.fillStyle = `rgba(255,0,0,${eyeIntensity})`;
+  const eyeSize = 10;
+  ctx.fillRect(boss.x + boss.width * 0.3, boss.y + boss.height * 0.4, eyeSize, eyeSize);
+  ctx.fillRect(boss.x + boss.width * 0.6, boss.y + boss.height * 0.4, eyeSize, eyeSize);
+
+  // Spikes
+  ctx.fillStyle = "#330033";
+  for (let i = 0; i < 6; i++) {
+    const spikeX = boss.x + i * (boss.width / 5);
+    ctx.beginPath();
+    ctx.moveTo(spikeX, boss.y);
+    ctx.lineTo(spikeX + 8, boss.y - 25 - Math.random() * 5);
+    ctx.lineTo(spikeX + 16, boss.y);
+    ctx.fill();
+  }
+
+  // Shadow mist trail
+  boss.shadowTrail = boss.shadowTrail || [];
+  boss.shadowTrail.push({
+    x: boss.x + boss.width / 2,
+    y: boss.y + boss.height / 2,
+    radius: boss.width / 2,
+    alpha: 0.4
+  });
+  if (boss.shadowTrail.length > 30) boss.shadowTrail.shift();
+
+  for (const shadow of boss.shadowTrail) {
+    ctx.save();
+    ctx.globalAlpha = shadow.alpha;
+    ctx.fillStyle = "black";
+    ctx.beginPath();
+    ctx.arc(shadow.x, shadow.y, shadow.radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    shadow.alpha -= 0.01;
+  }
 }
+
 
 function showPowerHint() {
   hintVisible = true;
