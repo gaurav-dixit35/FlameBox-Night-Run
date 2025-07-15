@@ -454,7 +454,7 @@ function drawPlayer() {
   // Flame trail when moving
   if (player.speedBoost || Math.abs(player.dy) > 0.5) {
     ctx.save();
-    ctx.fillStyle = "rgba(255, 25, 0, 0.76)";
+    ctx.fillStyle = "rgba(241, 183, 0, 0.76)";
     for (let i = 0; i < 5; i++) {
       const fx = player.x - Math.random() * 20;
       const fy = player.y + Math.random() * player.height;
