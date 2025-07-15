@@ -419,8 +419,8 @@ function drawPlayer() {
     centerX, centerY, 10,
     centerX, centerY, 40
   );
-  gradient.addColorStop(0, "rgba(255,140,0,0.8)");
-  gradient.addColorStop(1, "rgba(255,140,0,0)");
+  gradient.addColorStop(0, "rgba(255,0,255,0.8)");
+  gradient.addColorStop(1, "rgba(255,0,255,0)");
 
   ctx.save();
   ctx.fillStyle = gradient;
