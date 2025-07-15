@@ -411,20 +411,38 @@ function drawTornadoFX() {
 }
 
 function drawPlayer() {
-  if (player.animation.powerPunchActive) {
-    ctx.save();
-    ctx.translate(player.x + player.width / 2, player.y + player.height / 2);
-    ctx.globalAlpha = 0.9;
-    ctx.fillStyle = "#ffffff";
-    ctx.beginPath();
-    ctx.arc(0, 0, 60 - player.animation.powerPunchTimer / 5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-  }
-  ctx.fillStyle = player.color;
+  const centerX = player.x + player.width / 2;
+  const centerY = player.y + player.height / 2;
+
+  // Outer glowing aura
+  const gradient = ctx.createRadialGradient(
+    centerX, centerY, 10,
+    centerX, centerY, 40
+  );
+  gradient.addColorStop(0, "rgba(255,140,0,0.8)");
+  gradient.addColorStop(1, "rgba(255,140,0,0)");
+
+  ctx.save();
+  ctx.fillStyle = gradient;
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, 40 + Math.sin(Date.now() / 200) * 2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  // Main body
+  ctx.fillStyle = "#5500cc"; // heroic dark-purple core
   ctx.fillRect(player.x, player.y, player.width, player.height);
-  
+
+  // Sparks / particles
+  for (let i = 0; i < 3; i++) {
+    const offsetX = Math.random() * player.width;
+    const offsetY = Math.random() * player.height;
+    const size = Math.random() * 2 + 1;
+    ctx.fillStyle = "rgba(255, 215, 0, 0.7)";
+    ctx.fillRect(player.x + offsetX, player.y + offsetY, size, size);
+  }
 }
+
 
 function updatePlayer() {
   player.dy += player.gravity;
