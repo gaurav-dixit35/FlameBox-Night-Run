@@ -54,3 +54,47 @@ Built with 💻 **HTML5 Canvas, CSS, and JavaScript.**
 
 ## 📂 Project Structure
 
+
+---
+
+## 🤝 Collaboration
+
+We welcome contributions to enhance Flamebox: Night Run!  
+If you’d like to collaborate:
+
+- Fork this repository
+- Create a new branch (`feature/your-feature-name`)
+- Commit your changes
+- Submit a Pull Request
+
+We’re open to:
+
+- New power ideas
+- Better graphics or animations
+- Bug fixes and performance optimizations
+- New boss phases and abilities
+
+---
+
+## 🐞 Bug Reporting
+
+If you find a bug or glitch:
+
+1. Open an issue on the GitHub repository (if hosted there).
+2. Include clear steps to reproduce the bug.
+3. If possible, add screenshots or error logs to help us debug faster.
+
+Alternatively, feel free to reach out directly if you’re not comfortable opening an issue.  
+
+---
+
+## 📖 Conclusion
+
+Flamebox: Night Run is more than just a game — it’s a creative collaboration and a passion project that continues to evolve.  
+Your feedback, contributions, and support help make it better every day.  
+Let’s keep running, collecting flames, and pushing the limits of what we can create together!
+
+---
+
+❤️ Designed & Developed by **Gaurav Dixit**  
+🎮 Play now: [https://flamebox.netlify.app/](https://flamebox.netlify.app/)
