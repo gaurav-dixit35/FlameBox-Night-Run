@@ -53,8 +53,21 @@ Built with 💻 **HTML5 Canvas, CSS, and JavaScript.**
 ---
 
 ## 📂 Project Structure
-
-
+flamebox-night-run/
+├── index.html
+├── css/
+│ ├── style.css
+│ └── runner.css
+├── js/
+│ ├── main.js
+│ ├── obstacles.js
+│ ├── firebase.js
+│ └── nightBackground.js
+├── sounds/
+│ └── *.mp3
+├── images/
+│ └── favicon.ico
+├── README.md
 ---
 
 ## 🤝 Collaboration
