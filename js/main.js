@@ -87,64 +87,82 @@ function drawBoss() {
   const centerX = boss.x + boss.width / 2;
   const centerY = boss.y + boss.height / 2;
 
-  const pulse = 5 * Math.sin(performance.now() / 300); // pulsing aura
+  const pulse = 8 * Math.sin(performance.now() / 200); // for aura/mouth glow
 
-  // Shadow core
-  ctx.fillStyle = "#1a001a";
+  // Dark core body
+  ctx.fillStyle = "#0a000a";
   ctx.fillRect(boss.x, boss.y, boss.width, boss.height);
 
-  // Flickering aura
+  // Surrounding dark smoke (trail effect)
+  boss.shadowTrail = boss.shadowTrail || [];
+  boss.shadowTrail.push({
+    x: centerX,
+    y: centerY,
+    radius: boss.width / 2 + Math.random() * 10,
+    alpha: 0.3 + Math.random() * 0.2
+  });
+  if (boss.shadowTrail.length > 40) boss.shadowTrail.shift();
+
+  for (const smoke of boss.shadowTrail) {
+    ctx.save();
+    ctx.globalAlpha = smoke.alpha;
+    ctx.fillStyle = "rgba(0,0,0,0.5)";
+    ctx.beginPath();
+    ctx.arc(smoke.x, smoke.y, smoke.radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    smoke.alpha -= 0.003;
+  }
+
+  // Pulsing attack charge glow
   ctx.save();
   const gradient = ctx.createRadialGradient(
-    centerX, centerY, 20,
-    centerX, centerY, boss.width / 1.2 + pulse
+    centerX, centerY, 10,
+    centerX, centerY, boss.width / 1.5 + pulse
   );
-  gradient.addColorStop(0, "rgba(120,0,120,0.6)");
+  gradient.addColorStop(0, "rgba(150,0,150,0.5)");
   gradient.addColorStop(1, "rgba(0,0,0,0)");
   ctx.fillStyle = gradient;
   ctx.beginPath();
-  ctx.arc(centerX, centerY, boss.width / 1.2 + pulse, 0, Math.PI * 2);
+  ctx.arc(centerX, centerY, boss.width / 1.5 + pulse, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 
-  // Eyes — flicker
-  const eyeIntensity = Math.random() > 0.1 ? 1 : 0.3; 
-  ctx.fillStyle = `rgba(255,0,0,${eyeIntensity})`;
-  const eyeSize = 10;
-  ctx.fillRect(boss.x + boss.width * 0.3, boss.y + boss.height * 0.4, eyeSize, eyeSize);
-  ctx.fillRect(boss.x + boss.width * 0.6, boss.y + boss.height * 0.4, eyeSize, eyeSize);
+  // Eyes — glowing and scary
+  const eyeGlow = Math.random() > 0.2 ? 1 : 0.6;
+  ctx.fillStyle = `rgba(255,0,0,${eyeGlow})`;
+  const eyeSize = boss.width * 0.1;
+  ctx.beginPath();
+  ctx.arc(boss.x + boss.width * 0.3, boss.y + boss.height * 0.4, eyeSize, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(boss.x + boss.width * 0.7, boss.y + boss.height * 0.4, eyeSize, 0, Math.PI * 2);
+  ctx.fill();
 
-  // Spikes
-  ctx.fillStyle = "#330033";
-  for (let i = 0; i < 6; i++) {
-    const spikeX = boss.x + i * (boss.width / 5);
-    ctx.beginPath();
-    ctx.moveTo(spikeX, boss.y);
-    ctx.lineTo(spikeX + 8, boss.y - 25 - Math.random() * 5);
-    ctx.lineTo(spikeX + 16, boss.y);
-    ctx.fill();
-  }
+  // Mouth roaring — pulse glow
+  ctx.fillStyle = `rgba(255, 50, 50, ${0.4 + 0.3 * Math.abs(Math.sin(performance.now() / 200))})`;
+  ctx.fillRect(centerX - 10, boss.y + boss.height * 0.7, 20, 8);
 
-  // Shadow mist trail
-  boss.shadowTrail = boss.shadowTrail || [];
-  boss.shadowTrail.push({
-    x: boss.x + boss.width / 2,
-    y: boss.y + boss.height / 2,
-    radius: boss.width / 2,
-    alpha: 0.4
-  });
-  if (boss.shadowTrail.length > 30) boss.shadowTrail.shift();
+  // Two horns
+  ctx.fillStyle = "#331133";
+  ctx.beginPath();
+  ctx.moveTo(boss.x + boss.width * 0.2, boss.y);
+  ctx.lineTo(boss.x + boss.width * 0.15, boss.y - boss.height * 0.4);
+  ctx.lineTo(boss.x + boss.width * 0.25, boss.y);
+  ctx.fill();
 
-  for (const shadow of boss.shadowTrail) {
-    ctx.save();
-    ctx.globalAlpha = shadow.alpha;
-    ctx.fillStyle = "black";
-    ctx.beginPath();
-    ctx.arc(shadow.x, shadow.y, shadow.radius, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
+  ctx.beginPath();
+  ctx.moveTo(boss.x + boss.width * 0.8, boss.y);
+  ctx.lineTo(boss.x + boss.width * 0.85, boss.y - boss.height * 0.4);
+  ctx.lineTo(boss.x + boss.width * 0.75, boss.y);
+  ctx.fill();
 
-    shadow.alpha -= 0.01;
+  // Sparks
+  for (let i = 0; i < 5; i++) {
+    const sparkX = centerX + (Math.random() - 0.5) * boss.width;
+    const sparkY = centerY + (Math.random() - 0.5) * boss.height;
+    ctx.fillStyle = `rgba(255, ${Math.random() * 100}, 0, ${Math.random()})`;
+    ctx.fillRect(sparkX, sparkY, 2, 2);
   }
 }
 
