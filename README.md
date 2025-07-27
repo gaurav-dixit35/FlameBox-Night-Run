@@ -113,4 +113,4 @@ Let’s keep running, collecting flames, and pushing the limits of what we can c
 🎮 Play now: [https://flamebox.netlify.app/](https://flamebox.netlify.app/)
 
 
-                                                                                                                 ....new updates will come soon
+                                                                                        ....new updates will come soon
